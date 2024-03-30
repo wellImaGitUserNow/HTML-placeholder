@@ -1,7 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from 'vscode';
-import keys from 'ctrl-keys';
 import * as https from 'https';
 
 // This method is called when your extension is activated
@@ -82,9 +81,10 @@ export function activate(context: vscode.ExtensionContext) {
 
 			if(prefix.endsWith('/') && !prefix.endsWith("</"))
 			{
-				const slashCompletionItem = new vscode.InlineCompletionItem("lorem");
+				const slashCompletionItemText = new vscode.InlineCompletionItem("lorem");
+				const slashCompletionItemImage = new vscode.InlineCompletionItem("image");
 
-				return [slashCompletionItem];
+				return [slashCompletionItemText, slashCompletionItemImage];
 			}
 
 			if(prefix.endsWith("/lorem p ") || prefix.endsWith("/lorem l ") || prefix.endsWith("/lorem w "))
