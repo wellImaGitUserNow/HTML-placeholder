@@ -70,8 +70,9 @@ function activate(context) {
     const provideInlineCompletionItems = (document, position, context) => {
         let prefix = document.lineAt(position).text.substr(0, position.character);
         if (prefix.endsWith('/') && !prefix.endsWith("</")) {
-            const slashCompletionItem = new vscode.InlineCompletionItem("lorem");
-            return [slashCompletionItem];
+            const slashCompletionItemText = new vscode.InlineCompletionItem("lorem");
+            const slashCompletionItemImage = new vscode.InlineCompletionItem("image");
+            return [slashCompletionItemText, slashCompletionItemImage];
         }
         if (prefix.endsWith("/lorem p ") || prefix.endsWith("/lorem l ") || prefix.endsWith("/lorem w ")) {
             const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 21));
@@ -95,14 +96,24 @@ function activate(context) {
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(["html", 'php'], { provideCompletionItems }, ' '));
     vscode.window.onDidChangeTextEditorSelection(async (event) => {
         const editor = vscode.window.activeTextEditor;
+        const decoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(100, 100, 100, 0.3)',
+            borderRadius: '4px',
+            borderSpacing: '2px',
+            after: {
+                contentText: " press Enter to replace with  Lorem Ipsum",
+                fontStyle: 'ilatic',
+                color: 'rgb(160, 160, 160)'
+            }
+        });
         if (editor && event.kind === 1) {
             const doc = editor.document;
             const selection = editor.selection;
             let line = doc.lineAt(selection.active.line);
             let lineText = line.text;
             let character = lineText.charAt(selection.active.character - 1);
+            const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
             if (character === ' ') {
-                const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
                 let match;
                 if ((match = pattern.exec(lineText)) !== null) {
                     let lineNo = line.lineNumber;
@@ -111,27 +122,15 @@ function activate(context) {
                     let loremText = await GenLorem(type, number);
                     let start = doc.positionAt(match.index);
                     let end = doc.positionAt(selection.active.character - 1);
-                    const decoration = vscode.window.createTextEditorDecorationType({
-                        backgroundColor: 'rgba(100, 100, 100, 0.3)',
-                        borderRadius: '4px',
-                        borderSpacing: '2px',
-                        after: {
-                            contentText: " press Enter to replace with  Lorem Ipsum",
-                            fontStyle: 'ilatic',
-                            color: 'rgb(160, 160, 160)'
-                        }
-                    });
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
-                    console.log(lineNo + '\n');
-                    if (lineNo - 1 >= 0)
-                        console.log(doc.lineAt(lineNo - 1).text + ' : ' + doc.lineAt(lineNo - 1).text.endsWith('\n '));
-                    if (lineNo - 1 >= 0 && doc.lineAt(lineNo - 1).text.endsWith('\n')) {
+                    console.log(lineNo);
+                    console.log("last char : " + line.text[line.text.length - 1]);
+                    if (lineNo - 1 >= 0 && (doc.lineAt(lineNo - 1).text.endsWith('\n') || doc.lineAt(lineNo - 1).text.endsWith('\r\n'))) {
                         console.log('enter pressed');
                         editor.edit(editBuilder => {
                             editBuilder.replace(new vscode.Range(start, end), loremText);
                         });
                     }
-                    //	decoration.dispose(); // Dispose the decoration after replacement
                 }
             }
         }
