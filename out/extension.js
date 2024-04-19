@@ -94,44 +94,42 @@ function activate(context) {
         return [];
     };
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(["html", 'php'], { provideCompletionItems }, ' '));
-    vscode.window.onDidChangeTextEditorSelection(async (event) => {
+    const decoration = vscode.window.createTextEditorDecorationType({
+        backgroundColor: 'rgba(100, 100, 100, 0.3)',
+        borderRadius: '4px',
+        borderSpacing: '2px',
+        after: {
+            contentText: " press Enter to replace with  Lorem Ipsum",
+            fontStyle: 'ilatic',
+            color: 'rgb(160, 160, 160)'
+        }
+    });
+    vscode.workspace.onDidChangeTextDocument(async (event) => {
         const editor = vscode.window.activeTextEditor;
-        const decoration = vscode.window.createTextEditorDecorationType({
-            backgroundColor: 'rgba(100, 100, 100, 0.3)',
-            borderRadius: '4px',
-            borderSpacing: '2px',
-            after: {
-                contentText: " press Enter to replace with  Lorem Ipsum",
-                fontStyle: 'ilatic',
-                color: 'rgb(160, 160, 160)'
-            }
-        });
-        if (editor && event.kind === 1) {
+        if (editor) {
             const doc = editor.document;
             const selection = editor.selection;
             let line = doc.lineAt(selection.active.line);
             let lineText = line.text;
-            let character = lineText.charAt(selection.active.character - 1);
+            let character = lineText.charAt(selection.active.character);
             const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
+            console.log(character);
             if (character === ' ') {
-                let match;
+                var match;
                 if ((match = pattern.exec(lineText)) !== null) {
-                    let lineNo = line.lineNumber;
-                    let type = match[1];
-                    let number = parseInt(match[2]);
-                    let loremText = await GenLorem(type, number);
                     let start = doc.positionAt(match.index);
-                    let end = doc.positionAt(selection.active.character - 1);
+                    let end = doc.positionAt(selection.active.character);
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
-                    console.log(lineNo);
-                    console.log("last char : " + line.text[line.text.length - 1]);
-                    if (lineNo - 1 >= 0 && (doc.lineAt(lineNo - 1).text.endsWith('\n') || doc.lineAt(lineNo - 1).text.endsWith('\r\n'))) {
-                        console.log('enter pressed');
-                        editor.edit(editBuilder => {
-                            editBuilder.replace(new vscode.Range(start, end), loremText);
-                        });
-                    }
                 }
+            }
+            if ((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = pattern.exec(lineText)) !== null) {
+                let start = doc.positionAt(match.index);
+                let end = doc.positionAt(selection.active.character);
+                let loremText = await GenLorem(match[1], parseInt(match[2]));
+                editor.edit(editBuilder => {
+                    editBuilder.replace(new vscode.Range(start, end), loremText);
+                });
+                decoration.dispose();
             }
         }
     });
