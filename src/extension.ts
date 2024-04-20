@@ -127,19 +127,12 @@ export function activate(context: vscode.ExtensionContext) {
 			' '
 		));
 
-		const decoration = vscode.window.createTextEditorDecorationType(
+		var match;
+		var decoration = vscode.window.createTextEditorDecorationType(
 			{
-				backgroundColor: 'rgba(100, 100, 100, 0.3)',
-				borderRadius: '4px',
-				borderSpacing: '2px',
 
-				after:
-				{
-					contentText: " press Enter to replace with  Lorem Ipsum",
-					fontStyle: 'ilatic',
-					color: 'rgb(160, 160, 160)'
-				}
-			});
+			}
+		);
 
 		vscode.workspace.onDidChangeTextDocument(async event =>
 			{
@@ -155,31 +148,49 @@ export function activate(context: vscode.ExtensionContext) {
 					let character = lineText.charAt(selection.active.character);
 					const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
 
-					console.log(character);
-
 					if(character === ' ')
 					{
-						var match;
+						while ((match = pattern.exec(lineText)) !== null) 
+						{
+							let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
+							let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
 
-						if((match = pattern.exec(lineText)) !== null)
-						{							
-							let start = doc.positionAt(match.index);
-							let end = doc.positionAt(selection.active.character);
+							decoration = vscode.window.createTextEditorDecorationType(
+							{
+								backgroundColor: 'rgba(100, 100, 100, 0.3)',
+								borderRadius: '4px',
+								borderSpacing: '2px',
+						
+								after:
+								{
+									contentText: " press Enter to replace with  Lorem Ipsum",
+									fontStyle: 'ilatic',
+									color: 'rgb(160, 160, 160)'
+								}
+							});
 
+							console.log("PATTERN DETECTION\ndecoration: ", decoration, "\nstart: ", start, "\nend: ", end);
+				
 							editor.setDecorations(decoration, [new vscode.Range(start, end)]);
 						}
 					}
+
 					if((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = pattern.exec(lineText)) !== null)
 					{
-						let start = doc.positionAt(match.index);
-						let end = doc.positionAt(selection.active.character);
-						let loremText = await GenLorem(match[1], parseInt(match[2]));
-
-						editor.edit(editBuilder =>
+						while (match !== null) 
 						{
-							editBuilder.replace(new vscode.Range(start, end), loremText)
-						});
-						
+							let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
+							let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
+				
+							let loremText = await GenLorem(match[1], parseInt(match[2]));
+				
+							editor.edit(editBuilder => 
+							{
+								editBuilder.replace(new vscode.Range(start, end), loremText);
+							});
+
+							match = pattern.exec(lineText);
+						}
 						decoration.dispose();
 					}
 				}
