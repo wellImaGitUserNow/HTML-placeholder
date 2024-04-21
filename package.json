@@ -16,22 +16,8 @@
   "main": "out/extension.js",
   "contributes": {
     "commands": [
-      {
-        "command": "htmlipsum.debugEnter",
-        "title": "Hello World"
-      },
-      {
-        "command": "htmlipsum.replaceWithLoremIpsum",
-        "title": "replace pattern with Lorem Ipsum"
-      }
     ],
     "keybindings": [
-      {
-          "command": "htmlipsum.debugEnter",
-          "key": "enter",
-          "mac": "cmd+enter",
-          "when": "editorTextFocus"
-      }
     ]
   },
   "scripts": {

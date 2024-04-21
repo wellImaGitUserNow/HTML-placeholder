@@ -64,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	var match;
-
+	
 	var decoration = vscode.window.createTextEditorDecorationType(
 		{
 
