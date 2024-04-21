@@ -11,62 +11,6 @@ function activate(context) {
     // Use the console to output diagnostic information (console.log) and errors (console.error)
     // This line of code will only be executed once when your extension is activated
     console.log('Congratulations, your extension "htmlipsum" is now active!');
-    let disposable = vscode.commands.registerCommand('htmlipsum.debugEnter', async (event) => {
-        const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
-        const doc = editor.document;
-        editor?.edit(editBuilder => {
-            editBuilder.insert(new vscode.Position(editor.selection.active.line, editor.selection.active.character), "\n");
-        });
-        //console.log("current line: " + editor?.selection.active.line + "\nline a character after: " + doc.positionAt(event.contentChanges[0].range.start.character + 1) + "\n");
-    });
-    context.subscriptions.push(disposable);
-    /*
-
-    let loremipsum = vscode.workspace.onDidChangeTextDocument(event =>
-        {
-            const editor = vscode.window.activeTextEditor;
-
-            if(!editor)
-            {
-                return;
-            }
-
-            const doc = event.document;
-            const text = doc.getText();
-
-            const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-            let match;
-
-            while((match = pattern.exec(text)) !== null)
-            {
-                const type = match[1];
-                const number = parseInt(match[2]);
-
-
-                const start = doc.positionAt(match.index);
-                const end = doc.positionAt(match.index + match[0].length);
-                console.log("end: " + match.index + match[0].length);
-                const range = new vscode.Range(start, end);
-
-                GenLorem(type, number).then(loremText =>
-                    {
-                        editor.edit(editBuilder =>
-                            {
-                                editBuilder.replace(range, loremText);
-                            });
-                    }).catch(error =>
-                        {
-                            vscode.window.showErrorMessage('Error: '+ error.message +'.');
-                        });
-            }
-        });
-
-        context.subscriptions.push(loremipsum);
-
-        */
     const provideInlineCompletionItems = (document, position, context) => {
         let prefix = document.lineAt(position).text.substr(0, position.character);
         if (prefix.endsWith('/') && !prefix.endsWith("</")) {
@@ -75,7 +19,7 @@ function activate(context) {
             return [slashCompletionItemText, slashCompletionItemImage];
         }
         if (prefix.endsWith("/lorem p ") || prefix.endsWith("/lorem l ") || prefix.endsWith("/lorem w ")) {
-            const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 21));
+            const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 57 + 7));
             return [noPlaceholder];
         }
         return [];
@@ -119,7 +63,6 @@ function activate(context) {
                             color: 'rgb(160, 160, 160)'
                         }
                     });
-                    console.log("PATTERN DETECTION\ndecoration: ", decoration, "\nstart: ", start, "\nend: ", end);
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
                 }
             }

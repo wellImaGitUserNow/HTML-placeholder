@@ -11,24 +11,6 @@ export function activate(context: vscode.ExtensionContext) {
 	// This line of code will only be executed once when your extension is activated
 	console.log('Congratulations, your extension "htmlipsum" is now active!');
 
-	let disposable = vscode.commands.registerCommand('htmlipsum.debugEnter',async event =>
-	{
-		const editor = vscode.window.activeTextEditor;
-
-		if(!editor)
-		{
-			return;
-		}
-		const doc = editor.document;
-
-		editor?.edit(editBuilder =>
-			{
-				editBuilder.insert(new vscode.Position(editor.selection.active.line, editor.selection.active.character), "\n");
-			});
-	});
-
-	context.subscriptions.push(disposable);
-
 	const provideInlineCompletionItems = (document: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext) =>
 	{
 		let prefix = document.lineAt(position).text.substr(0, position.character);
@@ -43,7 +25,7 @@ export function activate(context: vscode.ExtensionContext) {
 
 		if(prefix.endsWith("/lorem p ") || prefix.endsWith("/lorem l ") || prefix.endsWith("/lorem w "))
 		{
-			const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 21));
+			const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 57 + 7));
 
 			return [noPlaceholder];
 		}
@@ -82,6 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
 	));
 
 	var match;
+
 	var decoration = vscode.window.createTextEditorDecorationType(
 		{
 
