@@ -15,10 +15,8 @@
   ],
   "main": "out/extension.js",
   "contributes": {
-    "commands": [
-    ],
-    "keybindings": [
-    ]
+    "commands": [],
+    "keybindings": []
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -29,6 +27,7 @@
     "test": "node ./out/test/runTest.js"
   },
   "devDependencies": {
+    "@types/axios": "^0.14.0",
     "@types/glob": "^8.1.0",
     "@types/node": "^16.18.86",
     "@types/vscode": "^1.87.0",
@@ -43,7 +42,6 @@
   "type": "commonjs",
   "dependencies": {
     "@types/mocha": "^10.0.6",
-    "ctrl-keys": "^1.0.1",
-    "keyboardjs": "github:RobertWHurst/KeyboardJS"
+    "axios": "^0.21.4"
   }
 }

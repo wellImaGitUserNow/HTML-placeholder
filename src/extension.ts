@@ -1,16 +1,18 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+// IMPORTant IMPORTS
 import * as vscode from 'vscode';
 import * as https from 'https';
+import axios from 'axios';
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+// Google API info
+const API_KEY = 'AIzaSyBxYSYMNrUJZ6y7cFQOWcyUK2E_bkadBWc';  		// Google API key
+const CX = '9361567b5e3fd4d90';										// Google Search Engine ID
+
 export function activate(context: vscode.ExtensionContext) {
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
+	// debug prompt
 	console.log('Congratulations, your extension "htmlipsum" is now active!');
 
+	// initializing inline completion for text commands
 	const provideInlineCompletionItems = (document: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext) =>
 	{
 		let prefix = document.lineAt(position).text.substr(0, position.character);
@@ -30,14 +32,22 @@ export function activate(context: vscode.ExtensionContext) {
 			return [noPlaceholder];
 		}
 
+		if(prefix.endsWith("<img"))
+		{
+			let size = GetRandomSize();
+			const slashCompletionItemImage = new vscode.InlineCompletionItem(size);
+		}
+
 		return [];
 	}
 
+	// declaration of language (and HTML -_-) which fit the extension 
 	context.subscriptions.push(vscode.languages.registerInlineCompletionItemProvider(
 		["html", 'php'], 
 		{provideInlineCompletionItems}
 	));
 
+	// initializing list completion for text command /LOREM
 	const provideCompletionItems = (document: vscode.TextDocument, position: vscode.Position, token: vscode.CancellationToken, context: vscode.CompletionContext) =>
 	{
 		let prefix = document.lineAt(position).text.substr(0, position.character);		
@@ -57,6 +67,7 @@ export function activate(context: vscode.ExtensionContext) {
 		return [];
 	}
 
+	// declaration of language (and HTML -_-) which fit the extension 
 	context.subscriptions.push(vscode.languages.registerCompletionItemProvider(
 		["html", 'php'], 
 		{provideCompletionItems},
@@ -65,12 +76,14 @@ export function activate(context: vscode.ExtensionContext) {
 
 	var match;
 	
+	// empty decoration
 	var decoration = vscode.window.createTextEditorDecorationType(
 		{
 
 		}
 	);
 
+	// every single change in document triggers all this stuff *_*
 	vscode.workspace.onDidChangeTextDocument(async event =>
 	{
 		const editor = vscode.window.activeTextEditor;
@@ -83,11 +96,12 @@ export function activate(context: vscode.ExtensionContext) {
 			let line = doc.lineAt(selection.active.line);
 			let lineText = line.text;
 			let character = lineText.charAt(selection.active.character);
-			const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
+			const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
+			const imagePattern = /<img (^[a-zA-Z0-9]+$+) (\d+)x(\d+) (^[a-zA-Z]+)/g;
 
 			if(character === ' ')
 			{
-				while ((match = pattern.exec(lineText)) !== null) 
+				while ((match = loremPattern.exec(lineText)) !== null) 
 				{
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
 					let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
@@ -110,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
 				}
 			}
 
-			if((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = pattern.exec(lineText)) !== null)
+			if((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = loremPattern.exec(lineText)) !== null)
 			{
 				while (match !== null) 
 				{
@@ -124,12 +138,40 @@ export function activate(context: vscode.ExtensionContext) {
 						editBuilder.replace(new vscode.Range(start, end), loremText);
 					});
 
-					match = pattern.exec(lineText);
+					match = loremPattern.exec(lineText);
 				}
 				decoration.dispose();
 			}
 		}
 	});
+}
+
+function GetRandomSize()
+{
+	let rand = Math.round(Math.random() * 3 + 1);
+	
+	switch (rand)
+	{
+		default:
+			return "";
+	}
+}
+
+async function fetchImageUrl(query: string, resolution: string, color: string): Promise<string | null>
+{
+    const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${CX}&searchType=image&imgSize=${resolution}&imgColorType=${color}&key=${API_KEY}`;
+
+    try {
+        const response = await axios.get(url);
+        const items = response.data.items;
+        if (items && items.length > 0) {
+            return items[0].link;
+        }
+        return null;
+    } catch (error) {
+        console.error('Error fetching image URL:', error);
+        return null;
+    }
 }
 
 interface LoremApiResponse
