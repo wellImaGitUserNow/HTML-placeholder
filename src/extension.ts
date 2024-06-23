@@ -15,16 +15,18 @@ export function activate(context: vscode.ExtensionContext) {
 	// initializing inline completion for text commands
 	const provideInlineCompletionItems = (document: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext) =>
 	{
+		// getting a whole line to check it's last characters
 		let prefix = document.lineAt(position).text.substr(0, position.character);
 
+		// return "lorem" if shalsh and not closing tag
 		if(prefix.endsWith('/') && !prefix.endsWith("</"))
 		{
 			const slashCompletionItemText = new vscode.InlineCompletionItem("lorem");
-			const slashCompletionItemImage = new vscode.InlineCompletionItem("image");
 
-			return [slashCompletionItemText, slashCompletionItemImage];
+			return [slashCompletionItemText];
 		}
 
+		// if one of possible options typed suggest a random number between 7 and 57
 		if(prefix.endsWith("/lorem p ") || prefix.endsWith("/lorem l ") || prefix.endsWith("/lorem w "))
 		{
 			const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 57 + 7));
@@ -32,10 +34,13 @@ export function activate(context: vscode.ExtensionContext) {
 			return [noPlaceholder];
 		}
 
+		// if starting an image tag suggest a size 
 		if(prefix.endsWith("<img"))
 		{
 			let size = GetRandomSize();
 			const slashCompletionItemImage = new vscode.InlineCompletionItem(size);
+
+			return [slashCompletionItemImage];
 		}
 
 		return [];
@@ -52,6 +57,7 @@ export function activate(context: vscode.ExtensionContext) {
 	{
 		let prefix = document.lineAt(position).text.substr(0, position.character);		
 
+		// if "/lorem" recognized suggest p(aragraphs)/l(ists)/w(ords)
 		if(prefix.endsWith("/lorem "))
 		{
 			const completionItems = 
@@ -97,10 +103,11 @@ export function activate(context: vscode.ExtensionContext) {
 			let lineText = line.text;
 			let character = lineText.charAt(selection.active.character);
 			const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-			const imagePattern = /<img (^[a-zA-Z0-9]+$+) (\d+)x(\d+) (^[a-zA-Z]+)/g;
+			const imagePattern = /\<img\s([a-zA-Z0-9]+)\s(\d+)x(\d+)\s([a-zA-Z]+)/g;
 
 			if(character === ' ')
 			{
+				// lorem ipsum stuff below:
 				while ((match = loremPattern.exec(lineText)) !== null) 
 				{
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
@@ -114,13 +121,38 @@ export function activate(context: vscode.ExtensionContext) {
 						
 						after:
 						{
-							contentText: " press Enter to replace with  Lorem Ipsum",
+							contentText: " press Enter to replace with Lorem Ipsum",
 							fontStyle: 'ilatic',
 							color: 'rgb(160, 160, 160)'
 						}
 					});
 				
 					editor.setDecorations(decoration, [new vscode.Range(start, end)]);
+				}
+
+				// image stuff below:
+				while ((match = imagePattern.exec(lineText)) !== null)
+				{
+					console.log("image pattern found I guess");
+
+					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
+					let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
+
+					decoration = vscode.window.createTextEditorDecorationType(
+						{
+							backgroundColor: 'rgba(100, 100, 100, 0.3)',
+							borderRadius: '4px',
+							borderSpacing: '2px',
+							
+							after:
+							{
+								contentText: " press Enter to replace with an image",
+								fontStyle: 'ilatic',
+								color: 'rgb(160, 160, 160)'
+							}
+						});
+
+						editor.setDecorations(decoration, [new vscode.Range(start, end)]);
 				}
 			}
 

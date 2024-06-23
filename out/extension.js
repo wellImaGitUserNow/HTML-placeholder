@@ -1,32 +1,44 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.deactivate = exports.activate = void 0;
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
+// IMPORTant IMPORTS
 const vscode = require("vscode");
 const https = require("https");
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+const axios_1 = require("axios");
+// Google API info
+const API_KEY = 'AIzaSyBxYSYMNrUJZ6y7cFQOWcyUK2E_bkadBWc'; // Google API key
+const CX = '9361567b5e3fd4d90'; // Google Search Engine ID
 function activate(context) {
-    // Use the console to output diagnostic information (console.log) and errors (console.error)
-    // This line of code will only be executed once when your extension is activated
+    // debug prompt
     console.log('Congratulations, your extension "htmlipsum" is now active!');
+    // initializing inline completion for text commands
     const provideInlineCompletionItems = (document, position, context) => {
+        // getting a whole line to check it's last characters
         let prefix = document.lineAt(position).text.substr(0, position.character);
+        // return "lorem" if shalsh and not closing tag
         if (prefix.endsWith('/') && !prefix.endsWith("</")) {
             const slashCompletionItemText = new vscode.InlineCompletionItem("lorem");
-            const slashCompletionItemImage = new vscode.InlineCompletionItem("image");
-            return [slashCompletionItemText, slashCompletionItemImage];
+            return [slashCompletionItemText];
         }
+        // if one of possible options typed suggest a random number between 7 and 57
         if (prefix.endsWith("/lorem p ") || prefix.endsWith("/lorem l ") || prefix.endsWith("/lorem w ")) {
             const noPlaceholder = new vscode.InlineCompletionItem("" + Math.round(Math.random() * 57 + 7));
             return [noPlaceholder];
         }
+        // if starting an image tag suggest a size 
+        if (prefix.endsWith("<img")) {
+            let size = GetRandomSize();
+            const slashCompletionItemImage = new vscode.InlineCompletionItem(size);
+            return [slashCompletionItemImage];
+        }
         return [];
     };
+    // declaration of language (and HTML -_-) which fit the extension 
     context.subscriptions.push(vscode.languages.registerInlineCompletionItemProvider(["html", 'php'], { provideInlineCompletionItems }));
+    // initializing list completion for text command /LOREM
     const provideCompletionItems = (document, position, token, context) => {
         let prefix = document.lineAt(position).text.substr(0, position.character);
+        // if "/lorem" recognized suggest p(aragraphs)/l(ists)/w(ords)
         if (prefix.endsWith("/lorem ")) {
             const completionItems = [
                 new vscode.CompletionItem("p", vscode.CompletionItemKind.Text),
@@ -37,9 +49,12 @@ function activate(context) {
         }
         return [];
     };
+    // declaration of language (and HTML -_-) which fit the extension 
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(["html", 'php'], { provideCompletionItems }, ' '));
     var match;
+    // empty decoration
     var decoration = vscode.window.createTextEditorDecorationType({});
+    // every single change in document triggers all this stuff *_*
     vscode.workspace.onDidChangeTextDocument(async (event) => {
         const editor = vscode.window.activeTextEditor;
         if (editor) {
@@ -48,9 +63,11 @@ function activate(context) {
             let line = doc.lineAt(selection.active.line);
             let lineText = line.text;
             let character = lineText.charAt(selection.active.character);
-            const pattern = /\/lorem\s(p|l|w)\s(\d+)/g;
+            const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
+            const imagePattern = /\<img\s([a-zA-Z0-9]+)\s(\d+)x(\d+)\s([a-zA-Z]+)/g;
             if (character === ' ') {
-                while ((match = pattern.exec(lineText)) !== null) {
+                // lorem ipsum stuff below:
+                while ((match = loremPattern.exec(lineText)) !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
                     decoration = vscode.window.createTextEditorDecorationType({
@@ -58,7 +75,24 @@ function activate(context) {
                         borderRadius: '4px',
                         borderSpacing: '2px',
                         after: {
-                            contentText: " press Enter to replace with  Lorem Ipsum",
+                            contentText: " press Enter to replace with Lorem Ipsum",
+                            fontStyle: 'ilatic',
+                            color: 'rgb(160, 160, 160)'
+                        }
+                    });
+                    editor.setDecorations(decoration, [new vscode.Range(start, end)]);
+                }
+                // image stuff below:
+                while ((match = imagePattern.exec(lineText)) !== null) {
+                    console.log("image pattern found I guess");
+                    let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
+                    let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
+                    decoration = vscode.window.createTextEditorDecorationType({
+                        backgroundColor: 'rgba(100, 100, 100, 0.3)',
+                        borderRadius: '4px',
+                        borderSpacing: '2px',
+                        after: {
+                            contentText: " press Enter to replace with an image",
                             fontStyle: 'ilatic',
                             color: 'rgb(160, 160, 160)'
                         }
@@ -66,7 +100,7 @@ function activate(context) {
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
                 }
             }
-            if ((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = pattern.exec(lineText)) !== null) {
+            if ((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = loremPattern.exec(lineText)) !== null) {
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
@@ -74,7 +108,7 @@ function activate(context) {
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), loremText);
                     });
-                    match = pattern.exec(lineText);
+                    match = loremPattern.exec(lineText);
                 }
                 decoration.dispose();
             }
@@ -82,6 +116,28 @@ function activate(context) {
     });
 }
 exports.activate = activate;
+function GetRandomSize() {
+    let rand = Math.round(Math.random() * 3 + 1);
+    switch (rand) {
+        default:
+            return "";
+    }
+}
+async function fetchImageUrl(query, resolution, color) {
+    const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${CX}&searchType=image&imgSize=${resolution}&imgColorType=${color}&key=${API_KEY}`;
+    try {
+        const response = await axios_1.default.get(url);
+        const items = response.data.items;
+        if (items && items.length > 0) {
+            return items[0].link;
+        }
+        return null;
+    }
+    catch (error) {
+        console.error('Error fetching image URL:', error);
+        return null;
+    }
+}
 async function GenLorem(type, number) {
     let url = `https://lipsum.com/feed/json?amount=${number}&what=`;
     switch (type) {
