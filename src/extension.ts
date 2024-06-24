@@ -46,6 +46,24 @@ export function activate(context: vscode.ExtensionContext) {
 			return [slashCompletionItemImage];
 		}
 
+		// if "<img [QUERY] [ORIENTATION] [CATEGORY]" recognized suggest a minimal width
+		if(prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s$/))
+		{
+			let rand = Math.round(Math.random() * 5000 + 50);
+			const imageMinWidth = new vscode.InlineCompletionItem(rand.toString());
+
+			return [imageMinWidth];
+		}
+
+		// if "<img [QUERY] [ORIENTATION] [CATEGORY] [MIN_WIDTH]" recognized suggest a minimal height
+		if(prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s\d+\s$/))
+		{
+			let rand = Math.round(Math.random() * 5000 + 50);
+			const imageMinHeight = new vscode.InlineCompletionItem(rand.toString());
+
+			return [imageMinHeight];
+		}
+
 		return [];
 	}
 
@@ -73,30 +91,68 @@ export function activate(context: vscode.ExtensionContext) {
 			return completionItemsLorem;
 		}
 
-		if(prefix.match(/^<img\s[a-zA-Z]+(?=\s*$)/))
+		// if "<img [QUERY]" recognized suggest an orientation 
+		if(prefix.match(/^<img\s\".+\"(?=\s*$)/))
 		{
-			const completionItemsImageSize =
+			const completionItemsImageOrient =
 			[
-				new vscode.CompletionItem("icon", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("small", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("medium", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("large", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("xlarge", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("xxlarge", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("huge", vscode.CompletionItemKind.Text)
+				new vscode.CompletionItem("horizontal", vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem("vertical", vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem("all", vscode.CompletionItemKind.Text)
 			];
 
-			return completionItemsImageSize;
+			return completionItemsImageOrient;
 		}
 
-		if(prefix.match(/^<img\s[a-zA-Z]+\s(icon|small|medium|large|xlarge|xxlarge|huge)\s$/))
+		// if "<img [QUERY] [ORIENTATION]" recognized suggest a category
+		if(prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s$/))
 		{
-			const completionItemsImageColor = 
+			const completionItemsImageCat = 
 			[
-				new vscode.CompletionItem("color", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("gray", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("mono", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("trans", vscode.CompletionItemKind.Text)
+				new vscode.CompletionItem('backgrounds', vscode.CompletionItemKind.Text),
+  			  	new vscode.CompletionItem('fashion', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('nature', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('science', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('education', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('feelings', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('health', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('people', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('religion', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('places', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('animals', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('industry', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('computer', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('food', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('sports', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('transportation', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('travel', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('buildings', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('business', vscode.CompletionItemKind.Text),
+    			new vscode.CompletionItem('music', vscode.CompletionItemKind.Text)
+			];
+
+			return completionItemsImageCat;
+		}
+
+		// if "<img [QUERY] [ORIENTATION] [CATEGORY] [MIN_WIDTH] [MIN_HEIGHT]" recognized suggest a color
+		if(prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s\d+\s\d+\s$/))
+		{
+			const completionItemsImageColor =
+			[
+				new vscode.CompletionItem('grayscale', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('transparent', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('red', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('orange', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('yellow', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('green', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('turquoise', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('blue', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('lilac', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('pink', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('white', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('gray', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('black', vscode.CompletionItemKind.Text),
+				new vscode.CompletionItem('brown', vscode.CompletionItemKind.Text)
 			];
 
 			return completionItemsImageColor;
@@ -135,7 +191,7 @@ export function activate(context: vscode.ExtensionContext) {
 			let lineText = line.text;
 			let character = lineText.charAt(selection.active.character);
 			const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-			const imagePattern = /\<img\s([a-zA-Z0-9]+)\s([a-zA-Z]+)\s([a-zA-Z]+)/g;
+			const imagePattern = /^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s\d+\s\d+\s[a-zA-Z]+\s$/g;
 
 			if(character === ' ')
 			{
@@ -165,8 +221,6 @@ export function activate(context: vscode.ExtensionContext) {
 				// image stuff below:
 				while ((match = imagePattern.exec(lineText)) !== null)
 				{
-					console.log("image pattern found I guess");
-
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
 					let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
 
@@ -216,15 +270,20 @@ export function activate(context: vscode.ExtensionContext) {
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
 					let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
 
-					console.log("matches:\n" + match[1] + "; " + match[2] + "; " + match[3]);
+					let query = getMatchParam(match[0], 1);
+					let orientation = getMatchParam(match[0], 2);
+					let category = getMatchParam(match[0], 3);
+					let minWidth = parseInt(getMatchParam(match[0], 4));
+					let minHeight = parseInt(getMatchParam(match[0], 5));
+					let color = getMatchParam(match[0], 6);
 
-					let imageLink = await fetchImageUrl(match[1], match[2], match[3]);
+					let imageInfos = await GetImageURL(query, orientation, category, minWidth, minHeight, color);
 
-					console.log(imageLink);
+					console.log(imageInfos);
 
 					editor.edit(editBuilder =>
 						{
-							editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageLink}" alt = "placeholder image">`);
+							editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "placeholder image by ${imageInfos[1]}">`);
 						});
 
 					match = imagePattern.exec(lineText);
@@ -233,6 +292,21 @@ export function activate(context: vscode.ExtensionContext) {
 			}
 		}
 	});
+}
+
+function getMatchParam(mainPattern: string, stuffToGet: number)
+{
+	if(stuffToGet === 1)
+	{
+		return mainPattern.split(/\"/)[1];
+	}
+	else
+	{
+		let allParams = mainPattern.split(/\"/)[2];
+		let params = allParams.split(/\s/);
+		
+		return params[stuffToGet - 1];
+	}
 }
 
 function GetRandomTheme()
@@ -336,19 +410,22 @@ function GetRandomTheme()
     }
 }
 
-async function GetImageURL(query: string, orientation: string, category: string, min_width: number, min_height: number, color: string): Promise<string | null>
+async function GetImageURL(query: string, orientation: string, category: string, min_width: number, min_height: number, color: string): Promise<string[]>
 {
-	let url = `https://pixabay.com/api/?key=${PIX_API_KEY}&q=${query}&orientation=${orientation}&category=${category}&min_width=${min_width}&min_height=${min_height}&color=${color}&image_type=photo`;
+	let url = `https://pixabay.com/api/?key=${PIX_API_KEY}&q=${encodeURIComponent(query)}&orientation=${orientation}&category=${category}&min_width=${min_width}&min_height=${min_height}&color=${color}&safesearch=true&image_type=photo`;
 
 	try
 	{
-		let response = await axios.get(url);
-		let items = response.data.items;
+		let response = await axios.get<PixabayApiResponse>(url);
+		let data = response.data;
 
-		if(items && items.length > 0)
-		{
-			return items[0].link;
-		}
+		let rand = Math.round(Math.random() * (data.totalHits - 1));
+
+		console.log(data.hits[0]);
+
+		let feedback = [data.hits[0].imageURL, data.hits[0].user];
+
+		return feedback;
 	}
 	catch(error)
 	{
@@ -356,14 +433,13 @@ async function GetImageURL(query: string, orientation: string, category: string,
 		console.error("STH WENT BAD WITH API", error);
 	}
 	
-
-	return null;
+	return [];
 }
 
+/*
 async function fetchImageUrl(query: string, resolution: string, color: string): Promise<string | null>
 {
     const url = `https://www.googleapis.com/customsearch/v1?q=${encodeURIComponent(query)}&cx=${CX}&searchType=image&imgSize=${resolution}&imgColorType=${color}&key=${API_KEY}`;
-	console.log(url);
 
     try {
         const response = await axios.get(url);
@@ -376,6 +452,41 @@ async function fetchImageUrl(query: string, resolution: string, color: string): 
         console.error('Error fetching image URL:', error);
         return null;
     }
+}
+*/
+
+interface PixabayApiResponseHit
+{
+	id: number;
+    pageURL: string;
+    type: string;
+    tags: string;
+    previewURL: string;
+    previewWidth: number;
+    previewHeight: number;
+    webformatURL: string;
+    webformatWidth: number;
+    webformatHeight: number;
+    largeImageURL: string;
+    fullHDURL: string;
+    imageURL: string;
+    imageWidth: number;
+    imageHeight: number;
+    imageSize: number;
+    views: number;
+    downloads: number;
+    likes: number;
+    comments: number;
+    user_id: number;
+    user: string;
+    userImageURL: string;
+}
+
+interface PixabayApiResponse
+{
+	total: number;
+	totalHits: number;
+	hits: PixabayApiResponseHit[];
 }
 
 interface LoremApiResponse
