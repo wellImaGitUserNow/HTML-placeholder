@@ -5,11 +5,7 @@ exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const https = require("https");
 const axios_1 = require("axios");
-// Google API info
-const API_KEY = 'AIzaSyBxYSYMNrUJZ6y7cFQOWcyUK2E_bkadBWc'; // Google API key
-const CX = '9361567b5e3fd4d90'; // Google Search Engine ID
-// Pixabay API info
-const PIX_API_KEY = "44556434-3fff7e0927ad4acb5f1a4eba8";
+const child_process_1 = require("child_process");
 function activate(context) {
     // debug prompt
     console.log('Congratulations, your extension "htmlipsum" is now active!');
@@ -33,18 +29,6 @@ function activate(context) {
             const slashCompletionItemImage = new vscode.InlineCompletionItem(theme);
             return [slashCompletionItemImage];
         }
-        // if "<img [QUERY] [ORIENTATION] [CATEGORY]" recognized suggest a minimal width
-        if (prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s$/)) {
-            let rand = Math.round(Math.random() * 5000 + 50);
-            const imageMinWidth = new vscode.InlineCompletionItem(rand.toString());
-            return [imageMinWidth];
-        }
-        // if "<img [QUERY] [ORIENTATION] [CATEGORY] [MIN_WIDTH]" recognized suggest a minimal height
-        if (prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s\d+\s$/)) {
-            let rand = Math.round(Math.random() * 5000 + 50);
-            const imageMinHeight = new vscode.InlineCompletionItem(rand.toString());
-            return [imageMinHeight];
-        }
         return [];
     };
     // declaration of language (and HTML -_-) which fit the extension 
@@ -61,58 +45,49 @@ function activate(context) {
             ];
             return completionItemsLorem;
         }
-        // if "<img [QUERY]" recognized suggest an orientation 
+        // if "<img [QUERY]" recognized suggest a size 
         if (prefix.match(/^<img\s\".+\"(?=\s*$)/)) {
+            const completionItemsImageSize = [
+                new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("small", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("medium", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("large", vscode.CompletionItemKind.Text)
+            ];
+            return completionItemsImageSize;
+        }
+        // if "<img [QUERY] [SIZE]" recognized suggest an orientation
+        if (prefix.match(/^<img\s\".+\"\s(any|small|medium|large)\s$/)) {
             const completionItemsImageOrient = [
-                new vscode.CompletionItem("horizontal", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("vertical", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("all", vscode.CompletionItemKind.Text)
+                new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("landscape", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("portrait", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("square", vscode.CompletionItemKind.Text),
             ];
             return completionItemsImageOrient;
         }
-        // if "<img [QUERY] [ORIENTATION]" recognized suggest a category
-        if (prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s$/)) {
-            const completionItemsImageCat = [
-                new vscode.CompletionItem('backgrounds', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('fashion', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('nature', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('science', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('education', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('feelings', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('health', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('people', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('religion', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('places', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('animals', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('industry', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('computer', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('food', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('sports', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('transportation', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('travel', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('buildings', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('business', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('music', vscode.CompletionItemKind.Text)
-            ];
-            return completionItemsImageCat;
-        }
-        // if "<img [QUERY] [ORIENTATION] [CATEGORY] [MIN_WIDTH] [MIN_HEIGHT]" recognized suggest a color
-        if (prefix.match(/^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s\d+\s\d+\s$/)) {
+        // if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
+        if (prefix.match(/^<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/)) {
+            const hashCharacters = "0123456789abcdef";
+            let colorHash = "#";
+            for (let i = 0; i <= 5; i++) {
+                let random = Math.floor(Math.random() * 16);
+                colorHash += hashCharacters[random];
+            }
             const completionItemsImageColor = [
-                new vscode.CompletionItem('grayscale', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('transparent', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('red', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('orange', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('yellow', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('green', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('turquoise', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('blue', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('lilac', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('pink', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('white', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('gray', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('black', vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem('brown', vscode.CompletionItemKind.Text)
+                new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem('red', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('orange', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('yellow', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('green', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('turquoise', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('blue', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('violet', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('pink', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('white', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('gray', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('black', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('brown', vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem(colorHash, vscode.CompletionItemKind.Color)
             ];
             return completionItemsImageColor;
         }
@@ -133,7 +108,7 @@ function activate(context) {
             let lineText = line.text;
             let character = lineText.charAt(selection.active.character);
             const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-            const imagePattern = /^<img\s\".+\"\s(horizontal|vertical|all)\s[a-zA-Z]+\s\d+\s\d+\s[a-zA-Z]+\s$/g;
+            const imagePattern = /^<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s$/g;
             if (character === ' ') {
                 // lorem ipsum stuff below:
                 while ((match = loremPattern.exec(lineText)) !== null) {
@@ -181,21 +156,18 @@ function activate(context) {
                 }
                 decoration.dispose();
             }
-            // replacing with complete image tag: HELLA WORK LEFT HERE!!!
+            // replacing with complete image tag and disposing decoration after thet replacement
             if ((event.contentChanges[0].text === "\n" || event.contentChanges[0].text === "\r\n") && (match = imagePattern.exec(lineText)) !== null) {
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
-                    let query = getMatchParam(match[0], 1);
-                    let orientation = getMatchParam(match[0], 2);
-                    let category = getMatchParam(match[0], 3);
-                    let minWidth = parseInt(getMatchParam(match[0], 4));
-                    let minHeight = parseInt(getMatchParam(match[0], 5));
-                    let color = getMatchParam(match[0], 6);
-                    let imageInfos = await GetImageURL(query, orientation, category, minWidth, minHeight, color);
-                    console.log(imageInfos);
+                    let query = getMatchParam(match[0], 0);
+                    let size = getMatchParam(match[0], 1);
+                    let orient = getMatchParam(match[0], 2);
+                    let color = getMatchParam(match[0], 3);
+                    let imageInfos = await GetImageData(query, size, orient, color);
                     editor.edit(editBuilder => {
-                        editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "placeholder image by ${imageInfos[1]}">`);
+                        editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
                     });
                     match = imagePattern.exec(lineText);
                 }
@@ -206,14 +178,30 @@ function activate(context) {
 }
 exports.activate = activate;
 function getMatchParam(mainPattern, stuffToGet) {
-    if (stuffToGet === 1) {
-        return mainPattern.split(/\"/)[1];
+    let allParams = mainPattern.split(/\"/)[2];
+    allParams = allParams.trim().trim();
+    let params = allParams.split(/\s/);
+    switch (stuffToGet) {
+        case 0:
+            return mainPattern.split(/\"/)[1];
+        case 1:
+            return getEnumValue(params[0], imageSize);
+        case 2:
+            return getEnumValue(params[1], imageOrient);
+        default:
+            if (params[2].includes("#") && params[2].length === 6) {
+                return params[2];
+            }
+            else {
+                return getEnumValue(params[2], imageColor);
+            }
     }
-    else {
-        let allParams = mainPattern.split(/\"/)[2];
-        let params = allParams.split(/\s/);
-        return params[stuffToGet - 1];
+}
+function getEnumValue(value, object) {
+    if (Object.values(object).includes(value)) {
+        return value;
     }
+    return "";
 }
 function GetRandomTheme() {
     let rand = Math.round(Math.random() * 30);
@@ -282,22 +270,75 @@ function GetRandomTheme() {
             return 'unknown';
     }
 }
-async function GetImageURL(query, orientation, category, min_width, min_height, color) {
-    let url = `https://pixabay.com/api/?key=${PIX_API_KEY}&q=${encodeURIComponent(query)}&orientation=${orientation}&category=${category}&min_width=${min_width}&min_height=${min_height}&color=${color}&safesearch=true&image_type=photo`;
+async function GetImageData(query, size, orient, color) {
+    let APIqueryURL = "https://api.pexels.com/v1/search";
+    const key2API = GrabAPIkey();
     try {
-        let response = await axios_1.default.get(url);
-        let data = response.data;
-        let rand = Math.round(Math.random() * (data.totalHits - 1));
-        console.log(data.hits[0]);
-        let feedback = [data.hits[0].imageURL, data.hits[0].user];
-        return feedback;
+        let response = axios_1.default.get(APIqueryURL, {
+            params: {
+                query: query,
+                size: size,
+                orientation: orient,
+                color: color,
+                per_page: 50
+            },
+            headers: {
+                'Authorization': key2API
+            }
+        });
+        let images = (await response).data.photos;
+        let random = Math.round(Math.random() * (images.length - 1));
+        let image = images[random];
+        console.log(`all photos: ${images.length}\nrandom photo: ${random}`);
+        return [image.src.original, image.alt, image.photographer];
     }
     catch (error) {
         vscode.window.showErrorMessage(error);
-        console.error("STH WENT BAD WITH API", error);
     }
     return [];
 }
+function GrabAPIkey() {
+    return new Promise((resolve, reject) => {
+        (0, child_process_1.exec)('../../dataPasser', (error, stdout, stderr) => {
+            if (error) {
+                reject(`Error: ${error.message}`);
+            }
+            else if (stderr) {
+                reject(`Stderr: ${stderr}`);
+            }
+            else {
+                resolve(stdout.trim());
+            }
+        });
+    });
+}
+var imageSize;
+(function (imageSize) {
+    imageSize["Small"] = "small";
+    imageSize["Medium"] = "medium";
+    imageSize["Large"] = "large";
+})(imageSize || (imageSize = {}));
+var imageOrient;
+(function (imageOrient) {
+    imageOrient["Landscape"] = "landscape";
+    imageOrient["Portrait"] = "portrait";
+    imageOrient["Square"] = "square";
+})(imageOrient || (imageOrient = {}));
+var imageColor;
+(function (imageColor) {
+    imageColor["Red"] = "red,";
+    imageColor["Orange"] = "orange";
+    imageColor["Yellow"] = "yellow";
+    imageColor["Green"] = "green";
+    imageColor["Turquoise"] = "turquoise";
+    imageColor["Blue"] = "blue";
+    imageColor["Violet"] = "violet";
+    imageColor["Pink"] = "pink";
+    imageColor["White"] = "white";
+    imageColor["Gray"] = "gray";
+    imageColor["Black"] = "black";
+    imageColor["Brown"] = "brown";
+})(imageColor || (imageColor = {}));
 async function GenLorem(type, number) {
     let url = `https://lipsum.com/feed/json?amount=${number}&what=`;
     switch (type) {
