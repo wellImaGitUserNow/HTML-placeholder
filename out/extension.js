@@ -6,6 +6,7 @@ const vscode = require("vscode");
 const https = require("https");
 const axios_1 = require("axios");
 const child_process_1 = require("child_process");
+const path = require("path");
 function activate(context) {
     // debug prompt
     console.log('Congratulations, your extension "htmlipsum" is now active!');
@@ -297,20 +298,19 @@ async function GetImageData(query, size, orient, color) {
     }
     return [];
 }
-function GrabAPIkey() {
-    return new Promise((resolve, reject) => {
-        (0, child_process_1.exec)('../../dataPasser', (error, stdout, stderr) => {
-            if (error) {
-                reject(`Error: ${error.message}`);
-            }
-            else if (stderr) {
-                reject(`Stderr: ${stderr}`);
-            }
-            else {
-                resolve(stdout.trim());
-            }
-        });
-    });
+async function GrabAPIkey() {
+    try {
+        const dataFromDataPasser = await runDataPasser();
+        console.log('Data from dataPasser:', dataFromDataPasser);
+        // Now you can store dataFromDataPasser in a variable or process it further
+        let storedData = dataFromDataPasser;
+        console.log('Stored data:', storedData);
+        return dataFromDataPasser;
+    }
+    catch (error) {
+        console.error('Failed to run dataPasser:', error);
+    }
+    return "";
 }
 var imageSize;
 (function (imageSize) {
@@ -380,7 +380,26 @@ async function GenLorem(type, number) {
         });
     });
 }
+function runDataPasser() {
+    return new Promise((resolve, reject) => {
+        // Adjust the path to dataPasser executable
+        const dataPasserPath = path.join("/home/seba_revi/Projects/HTML-placeholder/output/dataPasser"); // Adjust relative path as needed
+        (0, child_process_1.exec)(dataPasserPath, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing dataPasser: ${error.message}`);
+                reject(error);
+                return;
+            }
+            if (stderr) {
+                console.error(`stderr from dataPasser: ${stderr}`);
+            }
+            // Resolve with the stdout which contains the printed data
+            resolve(stdout.trim());
+        });
+    });
+}
 // This method is called when your extension is deactivated
-function deactivate() { }
+function deactivate() {
+}
 exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map

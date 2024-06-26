@@ -3,7 +3,7 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 import axios from 'axios';
 import { exec } from 'child_process';
-import { main } from '../../../HTML-placeholder/dataPasser';
+import * as path from 'path';
 
 export function activate(context: vscode.ExtensionContext)
 {
@@ -442,26 +442,20 @@ async function GetImageData(query: string, size: string, orient: string, color: 
 	return [];
 }
 
-function GrabAPIkey(): Promise<string>
+async function GrabAPIkey(): Promise<string>
 {
-    return new Promise((resolve, reject) => 
-	{
-       	exec('../../dataPasser', (error, stdout, stderr) => 
-		{
-           	if (error)
-			{
-               	reject(`Error: ${error.message}`);
-           	}
-			else if (stderr)
-			{
-               	reject(`Stderr: ${stderr}`);
-           	}
-			else
-			{
-               	resolve(stdout.trim());
-           	}
-       	});
-    });
+	try {
+        const dataFromDataPasser = await runDataPasser();
+        console.log('Data from dataPasser:', dataFromDataPasser);
+
+        // Now you can store dataFromDataPasser in a variable or process it further
+        let storedData = dataFromDataPasser;
+        console.log('Stored data:', storedData);
+		return dataFromDataPasser;
+    } catch (error) {
+        console.error('Failed to run dataPasser:', error);
+    }
+	return "";
 }
 
 enum imageSize
@@ -598,5 +592,28 @@ async function GenLorem(type: string, number: number): Promise<string>
     });
 }
 
+function runDataPasser(): Promise<string> {
+    return new Promise((resolve, reject) => {
+        // Adjust the path to dataPasser executable
+        const dataPasserPath = path.join(__dirname, '../../output/dataPasser'); // Adjust relative path as needed
+
+        exec(dataPasserPath, (error, stdout, stderr) => {
+            if (error) {
+                console.error(`Error executing dataPasser: ${error.message}`);
+                reject(error);
+                return;
+            }
+            if (stderr) {
+                console.error(`stderr from dataPasser: ${stderr}`);
+            }
+            // Resolve with the stdout which contains the printed data
+            resolve(stdout.trim());
+        });
+    });
+}
+
 // This method is called when your extension is deactivated
-export function deactivate(){}
+export function deactivate()
+{
+	
+}
