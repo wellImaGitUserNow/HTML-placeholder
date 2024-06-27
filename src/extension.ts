@@ -2,8 +2,9 @@
 import * as vscode from 'vscode';
 import * as https from 'https';
 import axios from 'axios';
-import { exec } from 'child_process';
+import { exec, spawn } from 'child_process';
 import * as path from 'path';
+import * as fs from 'fs';
 
 export function activate(context: vscode.ExtensionContext)
 {
@@ -445,7 +446,7 @@ async function GetImageData(query: string, size: string, orient: string, color: 
 async function GrabAPIkey(): Promise<string>
 {
 	try {
-        const dataFromDataPasser = await runDataPasser();
+        const dataFromDataPasser = await GetFromExec();
         console.log('Data from dataPasser:', dataFromDataPasser);
 
         // Now you can store dataFromDataPasser in a variable or process it further
@@ -456,6 +457,70 @@ async function GrabAPIkey(): Promise<string>
         console.error('Failed to run dataPasser:', error);
     }
 	return "";
+}
+
+async function GetFromExec(): Promise<string>
+{
+    const childExecPath = path.resolve(__dirname, '../../output/dataPasser');
+    console.log(`Trying to run file: ${childExecPath}`);
+
+    // Debug current working directory and resolved path
+    console.log(`Current working directory: ${process.cwd()}`);
+    console.log(`Resolved dataPasser path: ${childExecPath}`);
+
+    // Check if the file exists and is executable
+    if (!fs.existsSync(childExecPath))
+	{
+        console.error(`File does not exist at path: ${childExecPath}`);
+        return "";
+    }
+
+    try
+	{
+        fs.accessSync(childExecPath, fs.constants.X_OK);
+    }
+	catch (err)
+	{
+        console.error(`File is not executable: ${childExecPath}`);
+        return "";
+    }
+
+    return new Promise((resolve, reject) =>
+	{
+        const childExec = spawn(childExecPath);
+
+        let output = '';
+
+        childExec.stdout.on('data', (data) =>
+		{
+            console.log(`stdout: ${data}`);
+            output += data.toString();
+        });
+
+        childExec.stderr.on('data', (data) =>
+		{
+            console.error(`stderr: ${data}`);
+        });
+
+        childExec.on('close', (code) =>
+		{
+            console.log(`child process exited with code ${code}`);
+            if (code !== 0)
+			{
+                reject(new Error(`Process exited with code ${code}`));
+            }
+			else
+			{
+                resolve(output);
+            }
+        });
+
+        childExec.on('error', (err) =>
+		{
+            console.error(`Failed to start process: ${err}`);
+            reject(err);
+        });
+    });
 }
 
 enum imageSize
@@ -588,26 +653,6 @@ async function GenLorem(type: string, number: number): Promise<string>
         }).on('error', (error) => 
 		{
             reject(error);
-        });
-    });
-}
-
-function runDataPasser(): Promise<string> {
-    return new Promise((resolve, reject) => {
-        // Adjust the path to dataPasser executable
-        const dataPasserPath = path.join(__dirname, '../../output/dataPasser'); // Adjust relative path as needed
-
-        exec(dataPasserPath, (error, stdout, stderr) => {
-            if (error) {
-                console.error(`Error executing dataPasser: ${error.message}`);
-                reject(error);
-                return;
-            }
-            if (stderr) {
-                console.error(`stderr from dataPasser: ${stderr}`);
-            }
-            // Resolve with the stdout which contains the printed data
-            resolve(stdout.trim());
         });
     });
 }
