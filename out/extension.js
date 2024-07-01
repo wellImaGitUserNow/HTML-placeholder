@@ -5,9 +5,6 @@ exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const https = require("https");
 const axios_1 = require("axios");
-const child_process_1 = require("child_process");
-const path = require("path");
-const fs = require("fs");
 function activate(context) {
     // debug prompt
     console.log('Congratulations, your extension "htmlipsum" is now active!');
@@ -63,7 +60,7 @@ function activate(context) {
                 new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
                 new vscode.CompletionItem("landscape", vscode.CompletionItemKind.Text),
                 new vscode.CompletionItem("portrait", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("square", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("square", vscode.CompletionItemKind.Text)
             ];
             return completionItemsImageOrient;
         }
@@ -300,61 +297,19 @@ async function GetImageData(query, size, orient, color) {
     return [];
 }
 async function GrabAPIkey() {
+    const path = require('path');
+    const addonPath = path.resolve(__dirname, "../", '../', 'decryption addon', 'build', 'Release', 'addon.node');
+    const addon = require(addonPath);
     try {
-        const dataFromDataPasser = await GetFromExec();
-        console.log('Data from dataPasser:', dataFromDataPasser);
-        // Now you can store dataFromDataPasser in a variable or process it further
-        let storedData = dataFromDataPasser;
-        console.log('Stored data:', storedData);
-        return dataFromDataPasser;
+        const configFilePath = path.resolve(__dirname, "../", "../", "placeholder.conf");
+        const key2API = addon.readAPIKey(configFilePath);
+        console.log(`API key: ${key2API}`);
+        return key2API;
     }
     catch (error) {
-        console.error('Failed to run dataPasser:', error);
+        console.log(error);
     }
     return "";
-}
-async function GetFromExec() {
-    const childExecPath = path.resolve(__dirname, '../../output/dataPasser');
-    console.log(`Trying to run file: ${childExecPath}`);
-    // Debug current working directory and resolved path
-    console.log(`Current working directory: ${process.cwd()}`);
-    console.log(`Resolved dataPasser path: ${childExecPath}`);
-    // Check if the file exists and is executable
-    if (!fs.existsSync(childExecPath)) {
-        console.error(`File does not exist at path: ${childExecPath}`);
-        return "";
-    }
-    try {
-        fs.accessSync(childExecPath, fs.constants.X_OK);
-    }
-    catch (err) {
-        console.error(`File is not executable: ${childExecPath}`);
-        return "";
-    }
-    return new Promise((resolve, reject) => {
-        const childExec = (0, child_process_1.spawn)(childExecPath);
-        let output = '';
-        childExec.stdout.on('data', (data) => {
-            console.log(`stdout: ${data}`);
-            output += data.toString();
-        });
-        childExec.stderr.on('data', (data) => {
-            console.error(`stderr: ${data}`);
-        });
-        childExec.on('close', (code) => {
-            console.log(`child process exited with code ${code}`);
-            if (code !== 0) {
-                reject(new Error(`Process exited with code ${code}`));
-            }
-            else {
-                resolve(output);
-            }
-        });
-        childExec.on('error', (err) => {
-            console.error(`Failed to start process: ${err}`);
-            reject(err);
-        });
-    });
 }
 var imageSize;
 (function (imageSize) {
