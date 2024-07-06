@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext)
 		// if starting an image tag suggest a size 
 		if(prefix.endsWith("<img "))
 		{
-			let theme = GetRandomTheme();
+			let theme = `"GetRandomTheme()"`;
 			const slashCompletionItemImage = new vscode.InlineCompletionItem(theme);
 
 			return [slashCompletionItemImage];
@@ -68,7 +68,7 @@ export function activate(context: vscode.ExtensionContext)
 		}
 
 		// if "<img [QUERY]" recognized suggest a size 
-		if(prefix.match(/^<img\s\".+\"(?=\s*$)/))
+		if(prefix.match(/<img\s\".+\"(?=\s*$)/))
 		{
 			const completionItemsImageSize =
 			[
@@ -82,7 +82,7 @@ export function activate(context: vscode.ExtensionContext)
 		}
 
 		// if "<img [QUERY] [SIZE]" recognized suggest an orientation
-		if(prefix.match(/^<img\s\".+\"\s(any|small|medium|large)\s$/))
+		if(prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s$/))
 		{
 			const completionItemsImageOrient = 
 			[
@@ -96,7 +96,7 @@ export function activate(context: vscode.ExtensionContext)
 		}
 
 		// if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
-		if(prefix.match(/^<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/))
+		if(prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/))
 		{
 			const hashCharacters = "0123456789abcdef";
 			let colorHash = "#";
@@ -157,12 +157,14 @@ export function activate(context: vscode.ExtensionContext)
 			const doc = editor.document;
 			const selection = editor.selection;
 
-			let line = doc.lineAt(selection.active.line);
-			let lineText = line.text;
-			let character = lineText.charAt(selection.active.character);
+			const line = doc.lineAt(selection.active.line);
+			const lineText = line.text;
+			const character = lineText.charAt(selection.active.character);
 
 			const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-			const imagePattern = /^<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s$/g;
+			const imagePattern = /<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s/g;
+
+			console.log(`PLACEHOLDER: Line number = ${line.lineNumber}\nPLACEHOLDER: Current change = ${event.contentChanges[0].text}`);
 
 			if(character === ' ')
 			{
@@ -213,9 +215,12 @@ export function activate(context: vscode.ExtensionContext)
 				}
 			}
 
+			const loremMatch = ((match = loremPattern.exec(lineText)) !== null);
+
 			// replacing with lorem ipsum and disposing decoration after that replacement
-			if((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = loremPattern.exec(lineText)) !== null)
+			if((event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && loremMatch)
 			{
+				console.log("LOREM: Enter pressed!");
 				while (match !== null) 
 				{
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
@@ -226,6 +231,7 @@ export function activate(context: vscode.ExtensionContext)
 					editor.edit(editBuilder => 
 					{
 						editBuilder.replace(new vscode.Range(start, end), loremText);
+						console.log("LOREM: Selection replaced!")
 					});
 
 					match = loremPattern.exec(lineText);
@@ -233,9 +239,12 @@ export function activate(context: vscode.ExtensionContext)
 				decoration.dispose();
 			}
 
+			const imageMatch = (match = imagePattern.exec(lineText)) !== null;
+
 			// replacing with complete image tag and disposing decoration after thet replacement
-			if((event.contentChanges[0].text === "\n" || event.contentChanges[0].text === "\r\n") && (match = imagePattern.exec(lineText)) !== null)
+			if((event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && imageMatch)
 			{
+				console.log("IMAGE: Enter pressed!");
 				while (match !== null)
 				{
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
@@ -251,10 +260,17 @@ export function activate(context: vscode.ExtensionContext)
 					editor.edit(editBuilder =>
 						{
 							editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
+							console.log("IMAGE: Selection replaced!")
 						});
 
 					match = imagePattern.exec(lineText);
 				}
+				decoration.dispose();
+			}
+
+			//decoration dispose after breakline
+			if((event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && !(imageMatch || loremMatch))
+			{
 				decoration.dispose();
 			}
 		}
@@ -404,7 +420,7 @@ function GetRandomTheme()
 async function GetImageData(query: string, size: string, orient: string, color: string): Promise<string[]>
 {
 	let APIqueryURL = "https://api.pexels.com/v1/search";
-	const key2API = GrabAPIkey();
+	const key2API = (await GrabAPIkey()).toString();
 	try
 	{
 		
@@ -428,14 +444,12 @@ async function GetImageData(query: string, size: string, orient: string, color: 
 		let random = Math.round(Math.random() * (images.length - 1));
 		let image = images[random];
 
-		console.log(`all photos: ${images.length}\nrandom photo: ${random}`);
-
 		return [image.src.original, image.alt, image.photographer];
 		
 	}
 	catch(error)
 	{
-		vscode.window.showErrorMessage(error as string);
+		vscode.window.showErrorMessage("Image replacement failed.\nTry less specified query.");
 	}
 
 	return [];
@@ -443,21 +457,18 @@ async function GetImageData(query: string, size: string, orient: string, color: 
 
 async function GrabAPIkey(): Promise<string>
 {
-	const path = require('path');
 	const addonPath = path.resolve(__dirname, "../", '../', 'decryption addon', 'build', 'Release', 'addon.node');
 	const addon = require(addonPath);
 	try
 	{
 		const configFilePath = path.resolve(__dirname, "../", "../", "placeholder.conf");
-		const key2API = addon.readAPIKeyFromFile(configFilePath);
-		console.log(`API key: ${key2API}`);
+		const key2API = addon.readAPIKey(configFilePath);
 		return key2API;
 	}
 	catch(error)
 	{
-		console.log(error)
+		throw error;
 	}
-	return "";
 }
 
 

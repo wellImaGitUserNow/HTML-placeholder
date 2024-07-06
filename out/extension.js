@@ -5,6 +5,7 @@ exports.deactivate = exports.activate = void 0;
 const vscode = require("vscode");
 const https = require("https");
 const axios_1 = require("axios");
+const path = require("path");
 function activate(context) {
     // debug prompt
     console.log('Congratulations, your extension "htmlipsum" is now active!');
@@ -24,7 +25,7 @@ function activate(context) {
         }
         // if starting an image tag suggest a size 
         if (prefix.endsWith("<img ")) {
-            let theme = GetRandomTheme();
+            let theme = `"GetRandomTheme()"`;
             const slashCompletionItemImage = new vscode.InlineCompletionItem(theme);
             return [slashCompletionItemImage];
         }
@@ -45,7 +46,7 @@ function activate(context) {
             return completionItemsLorem;
         }
         // if "<img [QUERY]" recognized suggest a size 
-        if (prefix.match(/^<img\s\".+\"(?=\s*$)/)) {
+        if (prefix.match(/<img\s\".+\"(?=\s*$)/)) {
             const completionItemsImageSize = [
                 new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
                 new vscode.CompletionItem("small", vscode.CompletionItemKind.Text),
@@ -55,7 +56,7 @@ function activate(context) {
             return completionItemsImageSize;
         }
         // if "<img [QUERY] [SIZE]" recognized suggest an orientation
-        if (prefix.match(/^<img\s\".+\"\s(any|small|medium|large)\s$/)) {
+        if (prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s$/)) {
             const completionItemsImageOrient = [
                 new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
                 new vscode.CompletionItem("landscape", vscode.CompletionItemKind.Text),
@@ -65,7 +66,7 @@ function activate(context) {
             return completionItemsImageOrient;
         }
         // if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
-        if (prefix.match(/^<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/)) {
+        if (prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/)) {
             const hashCharacters = "0123456789abcdef";
             let colorHash = "#";
             for (let i = 0; i <= 5; i++) {
@@ -103,11 +104,12 @@ function activate(context) {
         if (editor) {
             const doc = editor.document;
             const selection = editor.selection;
-            let line = doc.lineAt(selection.active.line);
-            let lineText = line.text;
-            let character = lineText.charAt(selection.active.character);
+            const line = doc.lineAt(selection.active.line);
+            const lineText = line.text;
+            const character = lineText.charAt(selection.active.character);
             const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-            const imagePattern = /^<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s$/g;
+            const imagePattern = /<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s/g;
+            console.log(`PLACEHOLDER: Line number = ${line.lineNumber}\nPLACEHOLDER: Current change = ${event.contentChanges[0].text}`);
             if (character === ' ') {
                 // lorem ipsum stuff below:
                 while ((match = loremPattern.exec(lineText)) !== null) {
@@ -142,21 +144,26 @@ function activate(context) {
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
                 }
             }
+            const loremMatch = ((match = loremPattern.exec(lineText)) !== null);
             // replacing with lorem ipsum and disposing decoration after that replacement
-            if ((event.contentChanges[0].text === '\n' || event.contentChanges[0].text === '\r\n') && (match = loremPattern.exec(lineText)) !== null) {
+            if ((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && loremMatch) {
+                console.log("LOREM: Enter pressed!");
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
                     let loremText = await GenLorem(match[1], parseInt(match[2]));
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), loremText);
+                        console.log("LOREM: Selection replaced!");
                     });
                     match = loremPattern.exec(lineText);
                 }
                 decoration.dispose();
             }
+            const imageMatch = (match = imagePattern.exec(lineText)) !== null;
             // replacing with complete image tag and disposing decoration after thet replacement
-            if ((event.contentChanges[0].text === "\n" || event.contentChanges[0].text === "\r\n") && (match = imagePattern.exec(lineText)) !== null) {
+            if ((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && imageMatch) {
+                console.log("IMAGE: Enter pressed!");
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
@@ -167,9 +174,14 @@ function activate(context) {
                     let imageInfos = await GetImageData(query, size, orient, color);
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
+                        console.log("IMAGE: Selection replaced!");
                     });
                     match = imagePattern.exec(lineText);
                 }
+                decoration.dispose();
+            }
+            //decoration dispose after breakline
+            if ((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && !(imageMatch || loremMatch)) {
                 decoration.dispose();
             }
         }
@@ -271,7 +283,7 @@ function GetRandomTheme() {
 }
 async function GetImageData(query, size, orient, color) {
     let APIqueryURL = "https://api.pexels.com/v1/search";
-    const key2API = GrabAPIkey();
+    const key2API = (await GrabAPIkey()).toString();
     try {
         let response = axios_1.default.get(APIqueryURL, {
             params: {
@@ -288,28 +300,24 @@ async function GetImageData(query, size, orient, color) {
         let images = (await response).data.photos;
         let random = Math.round(Math.random() * (images.length - 1));
         let image = images[random];
-        console.log(`all photos: ${images.length}\nrandom photo: ${random}`);
         return [image.src.original, image.alt, image.photographer];
     }
     catch (error) {
-        vscode.window.showErrorMessage(error);
+        vscode.window.showErrorMessage("Image replacement failed.\nTry less specified query.");
     }
     return [];
 }
 async function GrabAPIkey() {
-    const path = require('path');
     const addonPath = path.resolve(__dirname, "../", '../', 'decryption addon', 'build', 'Release', 'addon.node');
     const addon = require(addonPath);
     try {
         const configFilePath = path.resolve(__dirname, "../", "../", "placeholder.conf");
         const key2API = addon.readAPIKey(configFilePath);
-        console.log(`API key: ${key2API}`);
         return key2API;
     }
     catch (error) {
-        console.log(error);
+        throw error;
     }
-    return "";
 }
 var imageSize;
 (function (imageSize) {
