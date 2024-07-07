@@ -7,8 +7,7 @@ const https = require("https");
 const axios_1 = require("axios");
 const path = require("path");
 function activate(context) {
-    // debug prompt
-    console.log('Congratulations, your extension "htmlipsum" is now active!');
+    var key2API;
     // initializing inline completion for text commands
     const provideInlineCompletionItems = (document, position, context) => {
         // getting a whole line to check it's last characters
@@ -25,7 +24,7 @@ function activate(context) {
         }
         // if starting an image tag suggest a size 
         if (prefix.endsWith("<img ")) {
-            let theme = `"GetRandomTheme()"`;
+            let theme = GetRandomTheme();
             const slashCompletionItemImage = new vscode.InlineCompletionItem(theme);
             return [slashCompletionItemImage];
         }
@@ -43,6 +42,9 @@ function activate(context) {
                 new vscode.CompletionItem("l", vscode.CompletionItemKind.Text),
                 new vscode.CompletionItem("w", vscode.CompletionItemKind.Text)
             ];
+            completionItemsLorem[0].detail = "paragraph(s)";
+            completionItemsLorem[1].detail = "list(s)";
+            completionItemsLorem[2].detail = "word(s)";
             return completionItemsLorem;
         }
         // if "<img [QUERY]" recognized suggest a size 
@@ -74,7 +76,7 @@ function activate(context) {
                 colorHash += hashCharacters[random];
             }
             const completionItemsImageColor = [
-                new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
+                new vscode.CompletionItem("any", vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('red', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('orange', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('yellow', vscode.CompletionItemKind.Color),
@@ -109,7 +111,6 @@ function activate(context) {
             const character = lineText.charAt(selection.active.character);
             const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
             const imagePattern = /<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s/g;
-            console.log(`PLACEHOLDER: Line number = ${line.lineNumber}\nPLACEHOLDER: Current change = ${event.contentChanges[0].text}`);
             if (character === ' ') {
                 // lorem ipsum stuff below:
                 while ((match = loremPattern.exec(lineText)) !== null) {
@@ -147,14 +148,12 @@ function activate(context) {
             const loremMatch = ((match = loremPattern.exec(lineText)) !== null);
             // replacing with lorem ipsum and disposing decoration after that replacement
             if ((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && loremMatch) {
-                console.log("LOREM: Enter pressed!");
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
                     let loremText = await GenLorem(match[1], parseInt(match[2]));
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), loremText);
-                        console.log("LOREM: Selection replaced!");
                     });
                     match = loremPattern.exec(lineText);
                 }
@@ -163,7 +162,6 @@ function activate(context) {
             const imageMatch = (match = imagePattern.exec(lineText)) !== null;
             // replacing with complete image tag and disposing decoration after thet replacement
             if ((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && imageMatch) {
-                console.log("IMAGE: Enter pressed!");
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
@@ -174,7 +172,6 @@ function activate(context) {
                     let imageInfos = await GetImageData(query, size, orient, color);
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
-                        console.log("IMAGE: Selection replaced!");
                     });
                     match = imagePattern.exec(lineText);
                 }
@@ -218,65 +215,65 @@ function GetRandomTheme() {
     let rand = Math.round(Math.random() * 30);
     switch (rand) {
         case 0:
-            return 'flowers';
+            return '"flowers"';
         case 1:
-            return 'cars';
+            return '"cars"';
         case 2:
-            return 'buildings';
+            return '"buildings"';
         case 3:
-            return 'nature';
+            return '"nature"';
         case 4:
-            return 'animals';
+            return '"animals"';
         case 5:
-            return 'landscapes';
+            return '"landscapes"';
         case 6:
-            return 'cityscapes';
+            return '"cityscapes"';
         case 7:
-            return 'people';
+            return '"people"';
         case 8:
-            return 'technology';
+            return '"technology"';
         case 9:
-            return 'food';
+            return '"food"';
         case 10:
-            return 'sports';
+            return '"sports"';
         case 11:
-            return 'travel';
+            return '"travel"';
         case 12:
-            return 'space';
+            return '"space"';
         case 13:
-            return 'abstract';
+            return '"abstract"';
         case 14:
-            return 'music';
+            return '"music"';
         case 15:
-            return 'art';
+            return '"art"';
         case 16:
-            return 'fashion';
+            return '"fashion"';
         case 17:
-            return 'interiors';
+            return '"interiors"';
         case 18:
-            return 'health';
+            return '"health"';
         case 19:
-            return 'fitness';
+            return '"fitness"';
         case 20:
-            return 'wildlife';
+            return '"wildlife"';
         case 21:
-            return 'ocean';
+            return '"ocean"';
         case 22:
-            return 'mountains';
+            return '"mountains"';
         case 23:
-            return 'forests';
+            return '"forests"';
         case 24:
-            return 'deserts';
+            return '"deserts"';
         case 25:
-            return 'gardens';
+            return '"gardens"';
         case 26:
-            return 'architecture';
+            return '"architecture"';
         case 27:
-            return 'nightlife';
+            return '"nightlife"';
         case 28:
-            return 'vehicles';
+            return '"vehicles"';
         case 29:
-            return 'pets';
+            return '"pets"';
         default:
             return 'unknown';
     }
