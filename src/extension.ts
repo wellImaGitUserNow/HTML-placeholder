@@ -4,10 +4,16 @@ import * as https from 'https';
 import axios from 'axios';
 import * as path from 'path';
 
+var key2API: string;
+
+async function SetAPIkey()
+{
+	key2API = (await GrabAPIkey()).toString();
+}
+
 export function activate(context: vscode.ExtensionContext)
 {
-	var key2API;
-
+	SetAPIkey();
 	// initializing inline completion for text commands
 	const provideInlineCompletionItems = (document: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext) =>
 	{
@@ -109,6 +115,21 @@ export function activate(context: vscode.ExtensionContext)
 				let random = Math.floor(Math.random() * 16);
 				colorHash += hashCharacters[random];
 			}
+
+			const colorMap: { [key: string]: string } = {
+				red: '#ff0000',
+				orange: '#ffa500',
+				yellow: '#ffff00',
+				green: '#008000',
+				turquoise: '#40e0d0',
+				blue: '#0000ff',
+				violet: '#ee82ee',
+				pink: '#ffc0cb',
+				white: '#ffffff',
+				gray: '#808080',
+				black: '#000000',
+				brown: '#a52a2a'
+			};
 
 			const completionItemsImageColor =
 			[
@@ -417,7 +438,6 @@ function GetRandomTheme()
 async function GetImageData(query: string, size: string, orient: string, color: string): Promise<string[]>
 {
 	let APIqueryURL = "https://api.pexels.com/v1/search";
-	const key2API = (await GrabAPIkey()).toString();
 	try
 	{
 		
@@ -606,5 +626,5 @@ async function GenLorem(type: string, number: number): Promise<string>
 // This method is called when your extension is deactivated
 export function deactivate()
 {
-	
+	key2API = "c4nn07r34d17N0W";
 }

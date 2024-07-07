@@ -6,8 +6,12 @@ const vscode = require("vscode");
 const https = require("https");
 const axios_1 = require("axios");
 const path = require("path");
+var key2API;
+async function SetAPIkey() {
+    key2API = (await GrabAPIkey()).toString();
+}
 function activate(context) {
-    var key2API;
+    SetAPIkey();
     // initializing inline completion for text commands
     const provideInlineCompletionItems = (document, position, context) => {
         // getting a whole line to check it's last characters
@@ -75,6 +79,20 @@ function activate(context) {
                 let random = Math.floor(Math.random() * 16);
                 colorHash += hashCharacters[random];
             }
+            const colorMap = {
+                red: '#ff0000',
+                orange: '#ffa500',
+                yellow: '#ffff00',
+                green: '#008000',
+                turquoise: '#40e0d0',
+                blue: '#0000ff',
+                violet: '#ee82ee',
+                pink: '#ffc0cb',
+                white: '#ffffff',
+                gray: '#808080',
+                black: '#000000',
+                brown: '#a52a2a'
+            };
             const completionItemsImageColor = [
                 new vscode.CompletionItem("any", vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('red', vscode.CompletionItemKind.Color),
@@ -280,7 +298,6 @@ function GetRandomTheme() {
 }
 async function GetImageData(query, size, orient, color) {
     let APIqueryURL = "https://api.pexels.com/v1/search";
-    const key2API = (await GrabAPIkey()).toString();
     try {
         let response = axios_1.default.get(APIqueryURL, {
             params: {
@@ -386,6 +403,7 @@ async function GenLorem(type, number) {
 }
 // This method is called when your extension is deactivated
 function deactivate() {
+    key2API = "c4nn07r34d17N0W";
 }
 exports.deactivate = deactivate;
 //# sourceMappingURL=extension.js.map
