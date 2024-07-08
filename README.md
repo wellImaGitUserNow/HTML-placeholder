@@ -33,13 +33,13 @@ This extension is dedicated to web development and supports only HTML and PHP la
 
 To generate lorem ipsum text, use the following syntax in the editor:
 
-/lorem p [number]
+`/lorem p [number]`
 Example: /lorem p 3 generates 3 paragraphs.
 
-/lorem w [number]
+`/lorem w [number]`
 Example: /lorem w 10 generates 10 words.
 
-/lorem l [number]
+`/lorem l [number]`
 Example: /lorem l 5 generates a list with 5 items.
 
 ### Generating Placeholder Images
