@@ -1,19 +1,24 @@
 // IMPORTant IMPORTS
 import * as vscode from 'vscode';
 import * as https from 'https';
-import axios from 'axios';
 import * as path from 'path';
+import axios from 'axios';
 
+// global key to API
 var key2API: string;
 
+// function to async setting API key;
 async function SetAPIkey()
 {
 	key2API = (await GrabAPIkey()).toString();
 }
 
+// on start of extension
 export function activate(context: vscode.ExtensionContext)
 {
+	// setting API key once
 	SetAPIkey();
+
 	// initializing inline completion for text commands
 	const provideInlineCompletionItems = (document: vscode.TextDocument, position: vscode.Position, context: vscode.InlineCompletionContext) =>
 	{
@@ -107,14 +112,8 @@ export function activate(context: vscode.ExtensionContext)
 		// if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
 		if(prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/))
 		{
-			const hashCharacters = "0123456789abcdef";
-			let colorHash = "#";
-
-			for(let i = 0; i <= 5; i++)
-			{
-				let random = Math.floor(Math.random() * 16);
-				colorHash += hashCharacters[random];
-			}
+			
+			let colorHash = GetRandomColor();
 
 			const colorMap: { [key: string]: string } = {
 				red: '#ff0000',
@@ -128,12 +127,13 @@ export function activate(context: vscode.ExtensionContext)
 				white: '#ffffff',
 				gray: '#808080',
 				black: '#000000',
-				brown: '#a52a2a'
+				brown: '#a52a2a',
+				any: 'any color'
 			};
 
 			const completionItemsImageColor =
 			[
-				new vscode.CompletionItem("any", vscode.CompletionItemKind.Color),
+				new vscode.CompletionItem('any', vscode.CompletionItemKind.Color),
 				new vscode.CompletionItem('red', vscode.CompletionItemKind.Color),
 				new vscode.CompletionItem('orange', vscode.CompletionItemKind.Color),
 				new vscode.CompletionItem('yellow', vscode.CompletionItemKind.Color),
@@ -146,8 +146,15 @@ export function activate(context: vscode.ExtensionContext)
 				new vscode.CompletionItem('gray', vscode.CompletionItemKind.Color),
 				new vscode.CompletionItem('black', vscode.CompletionItemKind.Color),
 				new vscode.CompletionItem('brown', vscode.CompletionItemKind.Color),
-				new vscode.CompletionItem(colorHash, vscode.CompletionItemKind.Color)
 			];
+
+			completionItemsImageColor.forEach(colorItem =>
+				{
+					colorItem.detail = GetFromColorMap(colorMap, colorItem.label.toString());
+				}
+			);
+
+			completionItemsImageColor.push(new vscode.CompletionItem(colorHash, vscode.CompletionItemKind.Color));
 
 			return completionItemsImageColor;
 		}
@@ -162,9 +169,10 @@ export function activate(context: vscode.ExtensionContext)
 		' '
 	));
 
+	// global variable to store patterns recognition
 	var match;
 	
-	// empty decoration
+	// empty global decoration
 	var decoration = vscode.window.createTextEditorDecorationType(
 		{
 
@@ -269,10 +277,10 @@ export function activate(context: vscode.ExtensionContext)
 					let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
 					let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
 
-					let query = getMatchParam(match[0], 0);
-					let size = getMatchParam(match[0], 1);
-					let orient = getMatchParam(match[0], 2);
-					let color = getMatchParam(match[0], 3);
+					let query = GetMatchParam(match[0], 0);
+					let size = GetMatchParam(match[0], 1);
+					let orient = GetMatchParam(match[0], 2);
+					let color = GetMatchParam(match[0], 3);
 
 					let imageInfos = await GetImageData(query, size, orient, color);
 
@@ -295,7 +303,40 @@ export function activate(context: vscode.ExtensionContext)
 	});
 }
 
-function getMatchParam(mainPattern: string, stuffToGet: number): string
+// random color hex code generation
+function GetRandomColor(): string
+{
+	const hashCharacters = "0123456789abcdef";
+	let randomColor = "#";
+
+	for(let i = 0; i <= 5; i++)
+	{
+		let random = Math.floor(Math.random() * 16);
+		randomColor += hashCharacters[random];
+	}
+
+
+	return randomColor;
+}
+
+// get a color hex value by label from color map
+function GetFromColorMap(object: {[key: string] : string}, label: string): string
+{
+	let value = "";
+
+	for(const [key, hashColor] of Object.entries(object))
+	{
+		if(label.toLocaleLowerCase() === key.toLocaleLowerCase())
+		{
+			value = hashColor;
+		}
+	}
+
+	return value;
+}
+
+// get single options out of recognized pattern
+function GetMatchParam(mainPattern: string, stuffToGet: number): string
 {
 	let allParams = mainPattern.split(/\"/)[2];
 	allParams = allParams.trim().trim();
@@ -324,6 +365,7 @@ function getMatchParam(mainPattern: string, stuffToGet: number): string
 	}
 }
 
+// get value of enum based on a key
 function getEnumValue(value: string, object: any): string
 {
 	if(Object.values(object).includes(value))
@@ -334,6 +376,7 @@ function getEnumValue(value: string, object: any): string
 	return "";
 }
 
+// get random query suggestion
 function GetRandomTheme()
 {
 	let rand = Math.round(Math.random() * 30);
@@ -435,6 +478,8 @@ function GetRandomTheme()
     }
 }
 
+// send API request specified with query, size, orientation and color
+// request authorized by key2API 
 async function GetImageData(query: string, size: string, orient: string, color: string): Promise<string[]>
 {
 	let APIqueryURL = "https://api.pexels.com/v1/search";
@@ -472,6 +517,7 @@ async function GetImageData(query: string, size: string, orient: string, color: 
 	return [];
 }
 
+// run C++ addon to get API key from configuration file
 async function GrabAPIkey(): Promise<string>
 {
 	const addonPath = path.resolve(__dirname, "../", '../', 'decryption addon', 'build', 'Release', 'addon.node');
@@ -488,7 +534,7 @@ async function GrabAPIkey(): Promise<string>
 	}
 }
 
-
+// possible image sizes
 enum imageSize
 {
 	Small = "small",
@@ -496,6 +542,7 @@ enum imageSize
 	Large = "large"
 }
 
+// possible image orientations
 enum imageOrient
 {
 	Landscape = "landscape",
@@ -503,6 +550,7 @@ enum imageOrient
 	Square = "square"
 }
 
+// possible image colors
 enum imageColor
 {
 	Red = "red,",
@@ -519,6 +567,8 @@ enum imageColor
 	Brown = "brown"
 }
 
+// interface to handle sources of photos
+// provided by Pexels®
 interface PexelsPhotoSource
 {
 	original: string;
@@ -531,6 +581,8 @@ interface PexelsPhotoSource
     tiny: string;
 }
 
+// interface to handle photos arrtibutes
+// provided by Pexels®
 interface PexelsPhoto
 {
 	id: number;
@@ -546,6 +598,7 @@ interface PexelsPhoto
 	alt: string;
 }
 
+// interface to handle Pexels® API responses
 interface PexelsAPI
 {
 	total_results: number;
@@ -555,6 +608,7 @@ interface PexelsAPI
 	next_page: string;
 }
 
+// interface to handle Lorem API responses
 interface LoremApiResponse
 {
     feed:
@@ -563,6 +617,7 @@ interface LoremApiResponse
     };
 }
 
+// Lorem Ipsum generation based on type and number
 async function GenLorem(type: string, number: number): Promise<string>
 {
     let url = `https://lipsum.com/feed/json?amount=${number}&what=`;
@@ -623,7 +678,7 @@ async function GenLorem(type: string, number: number): Promise<string>
     });
 }
 
-// This method is called when your extension is deactivated
+// Removing API key from memory on extension exit
 export function deactivate()
 {
 	key2API = "c4nn07r34d17N0W";

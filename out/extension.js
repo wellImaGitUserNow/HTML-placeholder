@@ -73,12 +73,7 @@ function activate(context) {
         }
         // if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
         if (prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/)) {
-            const hashCharacters = "0123456789abcdef";
-            let colorHash = "#";
-            for (let i = 0; i <= 5; i++) {
-                let random = Math.floor(Math.random() * 16);
-                colorHash += hashCharacters[random];
-            }
+            let colorHash = GetRandomColor();
             const colorMap = {
                 red: '#ff0000',
                 orange: '#ffa500',
@@ -91,10 +86,11 @@ function activate(context) {
                 white: '#ffffff',
                 gray: '#808080',
                 black: '#000000',
-                brown: '#a52a2a'
+                brown: '#a52a2a',
+                any: 'any color'
             };
             const completionItemsImageColor = [
-                new vscode.CompletionItem("any", vscode.CompletionItemKind.Color),
+                new vscode.CompletionItem('any', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('red', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('orange', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('yellow', vscode.CompletionItemKind.Color),
@@ -107,8 +103,11 @@ function activate(context) {
                 new vscode.CompletionItem('gray', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('black', vscode.CompletionItemKind.Color),
                 new vscode.CompletionItem('brown', vscode.CompletionItemKind.Color),
-                new vscode.CompletionItem(colorHash, vscode.CompletionItemKind.Color)
             ];
+            completionItemsImageColor.forEach(colorItem => {
+                colorItem.detail = GetFromColorMap(colorMap, colorItem.label.toString());
+            });
+            completionItemsImageColor.push(new vscode.CompletionItem(colorHash, vscode.CompletionItemKind.Color));
             return completionItemsImageColor;
         }
         return [];
@@ -183,10 +182,10 @@ function activate(context) {
                 while (match !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
-                    let query = getMatchParam(match[0], 0);
-                    let size = getMatchParam(match[0], 1);
-                    let orient = getMatchParam(match[0], 2);
-                    let color = getMatchParam(match[0], 3);
+                    let query = GetMatchParam(match[0], 0);
+                    let size = GetMatchParam(match[0], 1);
+                    let orient = GetMatchParam(match[0], 2);
+                    let color = GetMatchParam(match[0], 3);
                     let imageInfos = await GetImageData(query, size, orient, color);
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
@@ -203,7 +202,25 @@ function activate(context) {
     });
 }
 exports.activate = activate;
-function getMatchParam(mainPattern, stuffToGet) {
+function GetRandomColor() {
+    const hashCharacters = "0123456789abcdef";
+    let randomColor = "#";
+    for (let i = 0; i <= 5; i++) {
+        let random = Math.floor(Math.random() * 16);
+        randomColor += hashCharacters[random];
+    }
+    return randomColor;
+}
+function GetFromColorMap(object, label) {
+    let value = "";
+    for (const [key, hashColor] of Object.entries(object)) {
+        if (label.toLocaleLowerCase() === key.toLocaleLowerCase()) {
+            value = hashColor;
+        }
+    }
+    return value;
+}
+function GetMatchParam(mainPattern, stuffToGet) {
     let allParams = mainPattern.split(/\"/)[2];
     allParams = allParams.trim().trim();
     let params = allParams.split(/\s/);
