@@ -1,71 +1,69 @@
-# htmlipsum README
+# Placeholder Text & Image Generator - VS Code Extension
 
-This is the README for your extension "htmlipsum". After writing up a brief description, we recommend including the following sections.
+Welcome to the Placeholder Text & Image Generator, a VS Code extension designed to make your web development process smoother by allowing you to easily insert placeholder text and images directly within the editor.
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- **Placeholder Text Generation:**
+  - Generate lorem ipsum text on the fly by typing `/lorem (p|w|l) [number]`:
+    - `p`: Generate [number] of paragraphs.
+    - `w`: Generate [number] of words.
+    - `l`: Generate [number] of list items.
 
-For example if there is an image subfolder under your extension project workspace:
+- **Placeholder Image Generation:**
+  - Easily insert placeholder images by typing `<img "[query]" [size] [orientation] [color]`:
+    - `query`: Search term for the desired image.
+    - `size`: Desired size of an image (e.g. medium, small).
+    - `orientation`: Image orientation (e.g., landscape, portrait).
+    - `color`: Dominant color of the image.
 
-\!\[feature X\]\(images/feature-x.png\)
+    *Note: All images are provided by the [Pexels API](https://www.pexels.com).*
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## Supported Languages
 
-## Requirements
+This extension is dedicated to web development and supports only HTML and PHP languages.
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+## Installation
 
-## Extension Settings
+*This section will be provided after extension publication.*
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+## Usage
 
-For example:
+### Generating Lorem Ipsum Text
 
-This extension contributes the following settings:
+To generate lorem ipsum text, use the following syntax in the editor:
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+/lorem p [number]
+Example: /lorem p 3 generates 3 paragraphs.
 
-## Known Issues
+/lorem w [number]
+Example: /lorem w 10 generates 10 words.
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+/lorem l [number]
+Example: /lorem l 5 generates a list with 5 items.
 
-## Release Notes
+### Generating Placeholder Images
 
-Users appreciate release notes as you update your extension.
+To insert a placeholder image, use the following syntax:
 
-### 1.0.0
+`<img "[query]" [size] [orientation] [color]`
+Example: `<img "nature" small landscape green` generates a small image of nature with landscape orientation, and green color.
 
-Initial release of ...
+## Contributing
 
-### 1.0.1
+*This section will be provided after extension publication.*
 
-Fixed issue #.
+## License
 
-### 1.1.0
+This project is licensed under the MIT License - see the LICENSE file for details.
 
-Added features X, Y, and Z.
+## Acknowledgments
 
----
+Thanks to Pexels for providing the images.
+Inspired by the need to streamline the development process with easy access to placeholder content.
 
-## Following extension guidelines
+## Contact
 
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
+*This section will be provided after extension publication.*
 
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+Thank you for intrest in the Placeholder Text & Image Generator extension! Project will be publicated & ready to use soon!
