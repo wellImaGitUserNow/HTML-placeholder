@@ -35,15 +35,15 @@ To generate lorem ipsum text, use the following syntax in the editor:
 
 `/lorem p [number]`
 
-Example: /lorem p 3 generates 3 paragraphs.
+Example: `/lorem p 3` generates 3 paragraphs.
 
 `/lorem w [number]`
 
-Example: /lorem w 10 generates 10 words.
+Example: `/lorem w 10` generates 10 words.
 
 `/lorem l [number]`
 
-Example: /lorem l 5 generates a list with 5 items.
+Example: `/lorem l 5` generates a list with 5 items.
 
 ### Generating Placeholder Images
 
