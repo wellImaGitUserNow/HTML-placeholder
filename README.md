@@ -11,11 +11,11 @@ Welcome to the Placeholder Text & Image Generator, a VS Code extension designed 
     - `l`: Generate [number] of list items.
 
 - **Placeholder Image Generation:**
-  - Easily insert placeholder images by typing `<img "[query]" [size] [orientation] [color]`:
+  - Easily insert placeholder images by typing `<img "[query]" [size OR orientation] [color]`:
     - `query`: Search term for the desired image.
-    - `size`: Desired size of an image (e.g. medium, small).
+    - `size`: Desired size of an image (e.g., tiny, small, medium, large, xlarge).
     - `orientation`: Image orientation (e.g., landscape, portrait).
-    - `color`: Dominant color of the image.
+    - `color`: Dominant color of the image, which can be a named color or a hex value.
 
     *Note: All images are provided by the [Pexels API](https://www.pexels.com).*
 
@@ -33,25 +33,28 @@ This extension is dedicated to web development and supports only HTML and PHP la
 
 To generate lorem ipsum text, use the following syntax in the editor:
 
-`/lorem p [number]`
+- `/lorem p [number]`
 
-Example: `/lorem p 3` generates 3 paragraphs.
+  Example: `/lorem p 3` generates 3 paragraphs.
 
-`/lorem w [number]`
+- `/lorem w [number]`
 
-Example: `/lorem w 10` generates 10 words.
+  Example: `/lorem w 10` generates 10 words.
 
-`/lorem l [number]`
+- `/lorem l [number]`
 
-Example: `/lorem l 5` generates a list with 5 items.
+  Example: `/lorem l 5` generates a list with 5 items.
 
 ### Generating Placeholder Images
 
 To insert a placeholder image, use the following syntax:
 
-`<img "[query]" [size] [orientation] [color]`
+- `<img "[query]" [size || orientation] [color]`
 
-Example: `<img "nature" small landscape green` generates a small image of nature with landscape orientation, and green color.
+  - **Example 1**: `<img "nature" landscape green` generates an image of nature with landscape orientation and green color.
+  - **Example 2**: `<img "nature" xlarge "#ff5733"` generates an extra-large image of nature with a hex color `#ff5733`.
+
+**Note:** The current pattern recognition requires that generation phrases (commands) be used on a new, empty line in order to be highlighted correctly.
 
 ## Contributing
 
@@ -70,4 +73,4 @@ Inspired by the need to streamline the development process with easy access to p
 
 *This section will be provided after extension publication.*
 
-Thank you for intrest in the Placeholder Text & Image Generator extension! Project will be publicated & ready to use soon!
+Thank you for your interest in the Placeholder Text & Image Generator extension! The project will be published and ready to use soon!

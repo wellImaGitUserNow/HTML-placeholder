@@ -4,13 +4,17 @@ exports.deactivate = exports.activate = void 0;
 // IMPORTant IMPORTS
 const vscode = require("vscode");
 const https = require("https");
-const axios_1 = require("axios");
 const path = require("path");
+const axios_1 = require("axios");
+// global key to API
 var key2API;
+// function to async setting API key;
 async function SetAPIkey() {
     key2API = (await GrabAPIkey()).toString();
 }
+// on start of extension
 function activate(context) {
+    // setting API key once
     SetAPIkey();
     // initializing inline completion for text commands
     const provideInlineCompletionItems = (document, position, context) => {
@@ -51,28 +55,35 @@ function activate(context) {
             completionItemsLorem[2].detail = "word(s)";
             return completionItemsLorem;
         }
-        // if "<img [QUERY]" recognized suggest a size 
+        // if "<img [QUERY]" recognized suggest a size or an orientation
         if (prefix.match(/<img\s\".+\"(?=\s*$)/)) {
-            const completionItemsImageSize = [
-                new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("small", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("medium", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("large", vscode.CompletionItemKind.Text)
+            const completionItemsImageSizeOrient = [
+                // possible sizes
+                new vscode.CompletionItem("any", vscode.CompletionItemKind.Unit),
+                new vscode.CompletionItem("tiny", vscode.CompletionItemKind.Unit),
+                new vscode.CompletionItem("small", vscode.CompletionItemKind.Unit),
+                new vscode.CompletionItem("medium", vscode.CompletionItemKind.Unit),
+                new vscode.CompletionItem("large", vscode.CompletionItemKind.Unit),
+                new vscode.CompletionItem("xlarge", vscode.CompletionItemKind.Unit),
+                // possible orientations
+                new vscode.CompletionItem("landscape", vscode.CompletionItemKind.EnumMember),
+                new vscode.CompletionItem("portrait", vscode.CompletionItemKind.EnumMember)
             ];
-            return completionItemsImageSize;
+            const completionItemsOrder = {
+                [vscode.CompletionItemKind.Unit]: "1",
+                [vscode.CompletionItemKind.EnumMember]: "2"
+            };
+            let sortIndex = 0;
+            completionItemsImageSizeOrient.forEach(item => {
+                if (item.kind !== undefined && completionItemsOrder.hasOwnProperty(item.kind)) {
+                    item.sortText = completionItemsOrder[item.kind] + sortIndex.toString();
+                    sortIndex++;
+                }
+            });
+            return completionItemsImageSizeOrient;
         }
-        // if "<img [QUERY] [SIZE]" recognized suggest an orientation
-        if (prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s$/)) {
-            const completionItemsImageOrient = [
-                new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("landscape", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("portrait", vscode.CompletionItemKind.Text),
-                new vscode.CompletionItem("square", vscode.CompletionItemKind.Text)
-            ];
-            return completionItemsImageOrient;
-        }
-        // if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
-        if (prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/)) {
+        // if "<img [QUERY] [SIZE | ORIENTATION]" recognized suggest a color
+        if (prefix.match(/<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s$/)) {
             let colorHash = GetRandomColor();
             const colorMap = {
                 red: '#ff0000',
@@ -114,8 +125,9 @@ function activate(context) {
     };
     // declaration of language (and HTML -_-) which fit the extension 
     context.subscriptions.push(vscode.languages.registerCompletionItemProvider(["html", 'php'], { provideCompletionItems }, ' '));
+    // global variable to store patterns recognition
     var match;
-    // empty decoration
+    // empty global decoration
     var decoration = vscode.window.createTextEditorDecorationType({});
     // every single change in document triggers all this stuff *_*
     vscode.workspace.onDidChangeTextDocument(async (event) => {
@@ -127,7 +139,7 @@ function activate(context) {
             const lineText = line.text;
             const character = lineText.charAt(selection.active.character);
             const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-            const imagePattern = /<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s/g;
+            const imagePattern = /<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s.+\s/g;
             if (character === ' ') {
                 // lorem ipsum stuff below:
                 while ((match = loremPattern.exec(lineText)) !== null) {
@@ -183,10 +195,12 @@ function activate(context) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
                     let query = GetMatchParam(match[0], 0);
-                    let size = GetMatchParam(match[0], 1);
-                    let orient = GetMatchParam(match[0], 2);
-                    let color = GetMatchParam(match[0], 3);
-                    let imageInfos = await GetImageData(query, size, orient, color);
+                    let sizeOrOrient = GetMatchParam(match[0], 1);
+                    let color = GetMatchParam(match[0], 2);
+                    console.log(query);
+                    console.log(sizeOrOrient);
+                    console.log(color);
+                    let imageInfos = await GetImageData(query, sizeOrOrient, color);
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
                     });
@@ -202,6 +216,7 @@ function activate(context) {
     });
 }
 exports.activate = activate;
+// random color hex code generation
 function GetRandomColor() {
     const hashCharacters = "0123456789abcdef";
     let randomColor = "#";
@@ -211,6 +226,7 @@ function GetRandomColor() {
     }
     return randomColor;
 }
+// get a color hex value by label from color map
 function GetFromColorMap(object, label) {
     let value = "";
     for (const [key, hashColor] of Object.entries(object)) {
@@ -220,6 +236,7 @@ function GetFromColorMap(object, label) {
     }
     return value;
 }
+// get single options out of recognized pattern
 function GetMatchParam(mainPattern, stuffToGet) {
     let allParams = mainPattern.split(/\"/)[2];
     allParams = allParams.trim().trim();
@@ -228,24 +245,35 @@ function GetMatchParam(mainPattern, stuffToGet) {
         case 0:
             return mainPattern.split(/\"/)[1];
         case 1:
-            return getEnumValue(params[0], imageSize);
-        case 2:
-            return getEnumValue(params[1], imageOrient);
-        default:
-            if (params[2].includes("#") && params[2].length === 6) {
-                return params[2];
+            if (getEnumValue(params[0], imageSize) !== "") {
+                if (getEnumValue(params[0], imageSize) === "xlarge") {
+                    return "large2x";
+                }
+                return getEnumValue(params[0], imageSize);
+            }
+            else if (getEnumValue(params[0], imageOrient) !== "") {
+                return getEnumValue(params[0], imageOrient);
             }
             else {
-                return getEnumValue(params[2], imageColor);
+                return "";
+            }
+        default:
+            if (params[1].includes("#") && params[1].length === 7) {
+                return params[1];
+            }
+            else {
+                return getEnumValue(params[1], imageColor);
             }
     }
 }
+// get value of enum based on a key
 function getEnumValue(value, object) {
     if (Object.values(object).includes(value)) {
         return value;
     }
     return "";
 }
+// get random query suggestion
 function GetRandomTheme() {
     let rand = Math.round(Math.random() * 30);
     switch (rand) {
@@ -313,31 +341,78 @@ function GetRandomTheme() {
             return 'unknown';
     }
 }
-async function GetImageData(query, size, orient, color) {
+// send API request specified with query, size, orientation and color
+// request authorized by key2API 
+async function GetImageData(query, sizeOrOrient, color) {
     let APIqueryURL = "https://api.pexels.com/v1/search";
     try {
-        let response = axios_1.default.get(APIqueryURL, {
-            params: {
-                query: query,
-                size: size,
-                orientation: orient,
-                color: color,
-                per_page: 50
-            },
-            headers: {
-                'Authorization': key2API
-            }
-        });
+        let imageData = [];
+        let response;
+        if (sizeOrOrient === "landscape" || sizeOrOrient === "portrait" || sizeOrOrient === "square") {
+            response = axios_1.default.get(APIqueryURL, {
+                params: {
+                    query: query,
+                    orientation: sizeOrOrient,
+                    color: color,
+                    per_page: 50
+                },
+                headers: {
+                    'Authorization': key2API
+                }
+            });
+        }
+        else {
+            response = axios_1.default.get(APIqueryURL, {
+                params: {
+                    query: query,
+                    orientation: sizeOrOrient,
+                    color: color,
+                    per_page: 50
+                },
+                headers: {
+                    'Authorization': key2API
+                }
+            });
+        }
         let images = (await response).data.photos;
         let random = Math.round(Math.random() * (images.length - 1));
         let image = images[random];
-        return [image.src.original, image.alt, image.photographer];
+        switch (sizeOrOrient) {
+            case 'tiny':
+                imageData.push(image.src.tiny, image.alt, image.photographer);
+                break;
+            case 'small':
+                imageData.push(image.src.small, image.alt, image.photographer);
+                break;
+            case 'medium':
+                imageData.push(image.src.medium, image.alt, image.photographer);
+                break;
+            case 'large':
+                imageData.push(image.src.large, image.alt, image.photographer);
+                break;
+            case 'xlarge':
+                imageData.push(image.src.large2x, image.alt, image.photographer);
+                break;
+            case 'landscape':
+                imageData.push(image.src.landscape, image.alt, image.photographer);
+                break;
+            case 'portriat':
+                imageData.push(image.src.portrait, image.alt, image.photographer);
+                break;
+            case 'square':
+                imageData.push(image.src.original, image.alt, image.photographer);
+                break;
+            default:
+                return [image.src.original, image.alt, image.photographer];
+        }
+        return imageData;
     }
     catch (error) {
         vscode.window.showErrorMessage("Image replacement failed.\nTry less specified query.");
     }
     return [];
 }
+// run C++ addon to get API key from configuration file
 async function GrabAPIkey() {
     const addonPath = path.resolve(__dirname, "../", '../', 'decryption addon', 'build', 'Release', 'addon.node');
     const addon = require(addonPath);
@@ -350,18 +425,22 @@ async function GrabAPIkey() {
         throw error;
     }
 }
+// possible image sizes
 var imageSize;
 (function (imageSize) {
+    imageSize["Tiny"] = "tiny";
     imageSize["Small"] = "small";
     imageSize["Medium"] = "medium";
     imageSize["Large"] = "large";
+    imageSize["Xlarge"] = "xlarge";
 })(imageSize || (imageSize = {}));
+// possible image orientations
 var imageOrient;
 (function (imageOrient) {
     imageOrient["Landscape"] = "landscape";
     imageOrient["Portrait"] = "portrait";
-    imageOrient["Square"] = "square";
 })(imageOrient || (imageOrient = {}));
+// possible image colors
 var imageColor;
 (function (imageColor) {
     imageColor["Red"] = "red,";
@@ -377,6 +456,7 @@ var imageColor;
     imageColor["Black"] = "black";
     imageColor["Brown"] = "brown";
 })(imageColor || (imageColor = {}));
+// Lorem Ipsum generation based on type and number
 async function GenLorem(type, number) {
     let url = `https://lipsum.com/feed/json?amount=${number}&what=`;
     switch (type) {
@@ -418,7 +498,7 @@ async function GenLorem(type, number) {
         });
     });
 }
-// This method is called when your extension is deactivated
+// Removing API key from memory on extension exit
 function deactivate() {
     key2API = "c4nn07r34d17N0W";
 }

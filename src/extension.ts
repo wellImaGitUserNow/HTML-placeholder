@@ -81,36 +81,46 @@ export function activate(context: vscode.ExtensionContext)
 			return completionItemsLorem;
 		}
 
-		// if "<img [QUERY]" recognized suggest a size 
+		// if "<img [QUERY]" recognized suggest a size or an orientation
 		if(prefix.match(/<img\s\".+\"(?=\s*$)/))
 		{
-			const completionItemsImageSize =
+			const completionItemsImageSizeOrient =
 			[
-				new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("small", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("medium", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("large", vscode.CompletionItemKind.Text)
+				// possible sizes
+				new vscode.CompletionItem("any", vscode.CompletionItemKind.Unit),
+				new vscode.CompletionItem("tiny", vscode.CompletionItemKind.Unit),
+				new vscode.CompletionItem("small", vscode.CompletionItemKind.Unit),
+				new vscode.CompletionItem("medium", vscode.CompletionItemKind.Unit),
+				new vscode.CompletionItem("large", vscode.CompletionItemKind.Unit),
+				new vscode.CompletionItem("xlarge", vscode.CompletionItemKind.Unit),
+
+				// possible orientations
+				new vscode.CompletionItem("landscape", vscode.CompletionItemKind.EnumMember),
+				new vscode.CompletionItem("portrait", vscode.CompletionItemKind.EnumMember)
 			];
 
-			return completionItemsImageSize;
+			const completionItemsOrder : { [key: number]: string } = 
+			{
+				[vscode.CompletionItemKind.Unit] : "1",
+				[vscode.CompletionItemKind.EnumMember] : "2"
+			}
+
+			let sortIndex = 0;
+			completionItemsImageSizeOrient.forEach(item =>
+				{
+					if(item.kind !== undefined && completionItemsOrder.hasOwnProperty(item.kind))
+					{
+						item.sortText = completionItemsOrder[item.kind] + sortIndex.toString();
+						sortIndex++;
+					}
+				}
+			);
+
+			return completionItemsImageSizeOrient;
 		}
 
-		// if "<img [QUERY] [SIZE]" recognized suggest an orientation
-		if(prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s$/))
-		{
-			const completionItemsImageOrient = 
-			[
-				new vscode.CompletionItem("any", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("landscape", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("portrait", vscode.CompletionItemKind.Text),
-				new vscode.CompletionItem("square", vscode.CompletionItemKind.Text)
-			];
-
-			return completionItemsImageOrient
-		}
-
-		// if "<img [QUERY] [SIZE] [ORIENTATION]" recognized suggest a color
-		if(prefix.match(/<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s$/))
+		// if "<img [QUERY] [SIZE | ORIENTATION]" recognized suggest a color
+		if(prefix.match(/<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s$/))
 		{
 			
 			let colorHash = GetRandomColor();
@@ -194,7 +204,7 @@ export function activate(context: vscode.ExtensionContext)
 			const character = lineText.charAt(selection.active.character);
 
 			const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
-			const imagePattern = /<img\s\".+\"\s(any|small|medium|large)\s(any|landscape|portrait|square)\s.+\s/g;
+			const imagePattern = /<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s.+\s/g;
 
 			if(character === ' ')
 			{
@@ -278,11 +288,14 @@ export function activate(context: vscode.ExtensionContext)
 					let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
 
 					let query = GetMatchParam(match[0], 0);
-					let size = GetMatchParam(match[0], 1);
-					let orient = GetMatchParam(match[0], 2);
-					let color = GetMatchParam(match[0], 3);
+					let sizeOrOrient = GetMatchParam(match[0], 1);
+					let color = GetMatchParam(match[0], 2);
 
-					let imageInfos = await GetImageData(query, size, orient, color);
+					console.log(query);
+					console.log(sizeOrOrient);
+					console.log(color);
+
+					let imageInfos = await GetImageData(query, sizeOrOrient, color);
 
 					editor.edit(editBuilder =>
 						{
@@ -348,19 +361,31 @@ function GetMatchParam(mainPattern: string, stuffToGet: number): string
 			return mainPattern.split(/\"/)[1];
 
 		case 1:	
-			return getEnumValue(params[0], imageSize);
-
-		case 2:
-			return getEnumValue(params[1], imageOrient);
-
-		default:
-			if(params[2].includes("#") && params[2].length === 6)
+			if(getEnumValue(params[0], imageSize) !== "")
 			{
-				return params[2];
+				if(getEnumValue(params[0], imageSize) === "xlarge")
+					{
+						return "large2x";
+					}
+				return getEnumValue(params[0], imageSize);
+			}
+			else if(getEnumValue(params[0], imageOrient) !== "")
+			{
+				return getEnumValue(params[0], imageOrient);
 			}
 			else
 			{
-				return getEnumValue(params[2], imageColor);
+				return "";
+			}
+
+		default:
+			if(params[1].includes("#") && params[1].length === 7)
+			{
+				return params[1];
+			}
+			else
+			{
+				return getEnumValue(params[1], imageColor);
 			}	
 	}
 }
@@ -480,33 +505,91 @@ function GetRandomTheme()
 
 // send API request specified with query, size, orientation and color
 // request authorized by key2API 
-async function GetImageData(query: string, size: string, orient: string, color: string): Promise<string[]>
+async function GetImageData(query: string, sizeOrOrient: string, color: string): Promise<string[]>
 {
 	let APIqueryURL = "https://api.pexels.com/v1/search";
 	try
 	{
-		
-		let response = axios.get<PexelsAPI>(APIqueryURL, {
-			params:
-			{
-				query: query,
-				size: size,
-				orientation: orient,
-				color: color,
-				per_page: 50 
-			},
-			headers:
-			{
-				'Authorization': key2API
-			}
-		});
+		let imageData: Array<string> = [];
+		let response;
+
+		if(sizeOrOrient === "landscape" || sizeOrOrient === "portrait" || sizeOrOrient === "square")
+		{
+			response = axios.get<PexelsAPI>(APIqueryURL, {
+				params:
+				{
+					query: query,
+					orientation: sizeOrOrient,
+					color: color,
+					per_page: 50 
+				},
+				headers:
+				{
+					'Authorization': key2API
+				}
+			});
+		}
+		else
+		{
+			response = axios.get<PexelsAPI>(APIqueryURL, {
+				params:
+				{
+					query: query,
+					orientation: sizeOrOrient,
+					color: color,
+					per_page: 50 
+				},
+				headers:
+				{
+					'Authorization': key2API
+				}
+			});
+		}
 
 		let images = (await response).data.photos;
 
 		let random = Math.round(Math.random() * (images.length - 1));
 		let image = images[random];
 
-		return [image.src.original, image.alt, image.photographer];
+		switch(sizeOrOrient)
+		{
+			case 'tiny':
+				imageData.push(image.src.tiny, image.alt, image.photographer);
+				break;
+
+			case 'small':
+				imageData.push(image.src.small, image.alt, image.photographer);
+				break;
+
+			case 'medium':
+				imageData.push(image.src.medium, image.alt, image.photographer);
+				break;
+			
+			case 'large':
+				imageData.push(image.src.large, image.alt, image.photographer);
+				break;
+
+			case 'xlarge':
+				imageData.push(image.src.large2x, image.alt, image.photographer);
+				break;
+
+			case 'landscape':
+				imageData.push(image.src.landscape, image.alt, image.photographer);
+				break;
+
+			case 'portriat':
+				imageData.push(image.src.portrait, image.alt, image.photographer);
+				break;
+
+			case 'square':
+				imageData.push(image.src.original, image.alt, image.photographer);
+				break;
+
+			default:
+				return [image.src.original, image.alt, image.photographer];
+		}
+
+		return imageData;
 		
 	}
 	catch(error)
@@ -537,9 +620,11 @@ async function GrabAPIkey(): Promise<string>
 // possible image sizes
 enum imageSize
 {
+	Tiny = "tiny",
 	Small = "small",
 	Medium = "medium",
-	Large = "large"
+	Large = "large",
+	Xlarge = "xlarge"
 }
 
 // possible image orientations
@@ -547,7 +632,6 @@ enum imageOrient
 {
 	Landscape = "landscape",
 	Portrait = "portrait",
-	Square = "square"
 }
 
 // possible image colors
