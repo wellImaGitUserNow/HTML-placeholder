@@ -140,37 +140,20 @@ function activate(context) {
             const character = lineText.charAt(selection.active.character);
             const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
             const imagePattern = /<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s.+\s/g;
+            console.log(event.contentChanges[0]);
             if (character === ' ') {
                 // lorem ipsum stuff below:
                 while ((match = loremPattern.exec(lineText)) !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
-                    decoration = vscode.window.createTextEditorDecorationType({
-                        backgroundColor: 'rgba(100, 100, 100, 0.3)',
-                        borderRadius: '4px',
-                        borderSpacing: '2px',
-                        after: {
-                            contentText: " press Enter to replace with Lorem Ipsum",
-                            fontStyle: 'ilatic',
-                            color: 'rgb(160, 160, 160)'
-                        }
-                    });
+                    decoration = SetDecorationProperties(true);
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
                 }
                 // image stuff below:
                 while ((match = imagePattern.exec(lineText)) !== null) {
                     let start = new vscode.Position(line.lineNumber, line.range.start.character + match.index);
                     let end = new vscode.Position(line.lineNumber, line.range.start.character + match.index + match[0].length);
-                    decoration = vscode.window.createTextEditorDecorationType({
-                        backgroundColor: 'rgba(100, 100, 100, 0.3)',
-                        borderRadius: '4px',
-                        borderSpacing: '2px',
-                        after: {
-                            contentText: " press Enter to replace with an image",
-                            fontStyle: 'ilatic',
-                            color: 'rgb(160, 160, 160)'
-                        }
-                    });
+                    decoration = SetDecorationProperties(false);
                     editor.setDecorations(decoration, [new vscode.Range(start, end)]);
                 }
             }
@@ -197,9 +180,6 @@ function activate(context) {
                     let query = GetMatchParam(match[0], 0);
                     let sizeOrOrient = GetMatchParam(match[0], 1);
                     let color = GetMatchParam(match[0], 2);
-                    console.log(query);
-                    console.log(sizeOrOrient);
-                    console.log(color);
                     let imageInfos = await GetImageData(query, sizeOrOrient, color);
                     editor.edit(editBuilder => {
                         editBuilder.replace(new vscode.Range(start, end), `<img src = "${imageInfos[0]}" alt = "'${imageInfos[1]}' by ${imageInfos[2]} @ Pexels®">`);
@@ -216,6 +196,34 @@ function activate(context) {
     });
 }
 exports.activate = activate;
+function SetDecorationProperties(isLorem) {
+    let decoration;
+    if (isLorem) {
+        decoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(100, 100, 100, 0.3)',
+            borderRadius: '4px',
+            borderSpacing: '2px',
+            after: {
+                contentText: " press Enter to replace with Lorem Ipsum",
+                fontStyle: 'ilatic',
+                color: 'rgb(160, 160, 160)'
+            }
+        });
+    }
+    else {
+        decoration = vscode.window.createTextEditorDecorationType({
+            backgroundColor: 'rgba(100, 100, 100, 0.3)',
+            borderRadius: '4px',
+            borderSpacing: '2px',
+            after: {
+                contentText: " press Enter to replace with an image",
+                fontStyle: 'ilatic',
+                color: 'rgb(160, 160, 160)'
+            }
+        });
+    }
+    return decoration;
+}
 // random color hex code generation
 function GetRandomColor() {
     const hashCharacters = "0123456789abcdef";
