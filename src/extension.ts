@@ -86,8 +86,10 @@ export function activate(context: vscode.ExtensionContext)
 		{
 			const completionItemsImageSizeOrient =
 			[
+				// any size or orientation
+				new vscode.CompletionItem("any", vscode.CompletionItemKind.Enum),
+
 				// possible sizes
-				new vscode.CompletionItem("any", vscode.CompletionItemKind.Unit),
 				new vscode.CompletionItem("tiny", vscode.CompletionItemKind.Unit),
 				new vscode.CompletionItem("small", vscode.CompletionItemKind.Unit),
 				new vscode.CompletionItem("medium", vscode.CompletionItemKind.Unit),
@@ -101,8 +103,9 @@ export function activate(context: vscode.ExtensionContext)
 
 			const completionItemsOrder : { [key: number]: string } = 
 			{
-				[vscode.CompletionItemKind.Unit] : "1",
-				[vscode.CompletionItemKind.EnumMember] : "2"
+				[vscode.CompletionItemKind.Enum] : "1",	
+				[vscode.CompletionItemKind.Unit] : "2",
+				[vscode.CompletionItemKind.EnumMember] : "3"
 			}
 
 			let sortIndex = 0;
@@ -183,11 +186,7 @@ export function activate(context: vscode.ExtensionContext)
 	var match;
 	
 	// empty global decoration
-	var decoration = vscode.window.createTextEditorDecorationType(
-		{
-
-		}
-	);
+	var decoration = vscode.window.createTextEditorDecorationType({});
 
 	// every single change in document triggers all this stuff *_*
 	vscode.workspace.onDidChangeTextDocument(async event =>
@@ -205,8 +204,6 @@ export function activate(context: vscode.ExtensionContext)
 
 			const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
 			const imagePattern = /<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s.+\s/g;
-
-			console.log(event.contentChanges[0]);
 
 			if(character === ' ')
 			{
@@ -283,8 +280,9 @@ export function activate(context: vscode.ExtensionContext)
 				decoration.dispose();
 			}
 
-			//decoration dispose after breakline
-			if( ( (event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && !(imageMatch || loremMatch) ) )
+			// dispose decoration if pattern not accepted by Enter
+			// if last change is not ' ' nor '\n' nor '\r\n' and any pattern exists dispose the decoration
+			if(!(event.contentChanges[0].text.startsWith(' ') || event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && (imageMatch || loremMatch))
 			{
 				decoration.dispose();
 			}

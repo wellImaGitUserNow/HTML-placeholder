@@ -58,8 +58,9 @@ function activate(context) {
         // if "<img [QUERY]" recognized suggest a size or an orientation
         if (prefix.match(/<img\s\".+\"(?=\s*$)/)) {
             const completionItemsImageSizeOrient = [
+                // any size or orientation
+                new vscode.CompletionItem("any", vscode.CompletionItemKind.Enum),
                 // possible sizes
-                new vscode.CompletionItem("any", vscode.CompletionItemKind.Unit),
                 new vscode.CompletionItem("tiny", vscode.CompletionItemKind.Unit),
                 new vscode.CompletionItem("small", vscode.CompletionItemKind.Unit),
                 new vscode.CompletionItem("medium", vscode.CompletionItemKind.Unit),
@@ -70,8 +71,9 @@ function activate(context) {
                 new vscode.CompletionItem("portrait", vscode.CompletionItemKind.EnumMember)
             ];
             const completionItemsOrder = {
-                [vscode.CompletionItemKind.Unit]: "1",
-                [vscode.CompletionItemKind.EnumMember]: "2"
+                [vscode.CompletionItemKind.Enum]: "1",
+                [vscode.CompletionItemKind.Unit]: "2",
+                [vscode.CompletionItemKind.EnumMember]: "3"
             };
             let sortIndex = 0;
             completionItemsImageSizeOrient.forEach(item => {
@@ -140,7 +142,6 @@ function activate(context) {
             const character = lineText.charAt(selection.active.character);
             const loremPattern = /\/lorem\s(p|l|w)\s(\d+)/g;
             const imagePattern = /<img\s\".+\"\s(any|tiny|small|medium|large|xlarge|landscape|portrait)\s.+\s/g;
-            console.log(event.contentChanges[0]);
             if (character === ' ') {
                 // lorem ipsum stuff below:
                 while ((match = loremPattern.exec(lineText)) !== null) {
@@ -188,8 +189,9 @@ function activate(context) {
                 }
                 decoration.dispose();
             }
-            //decoration dispose after breakline
-            if ((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && !(imageMatch || loremMatch)) {
+            // dispose decoration if pattern not accepted by Enter
+            // if last change is not ' ' nor '\n' nor '\r\n' and any pattern exists dispose the decoration
+            if (!(event.contentChanges[0].text.startsWith(' ') || event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && (imageMatch || loremMatch)) {
                 decoration.dispose();
             }
         }
