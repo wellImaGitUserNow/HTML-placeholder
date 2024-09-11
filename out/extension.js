@@ -191,6 +191,7 @@ function activate(context) {
             }
             // dispose decoration if pattern not accepted by Enter
             // if last change is not ' ' nor '\n' nor '\r\n' and any pattern exists dispose the decoration
+            // actually doesn't work
             if (!(event.contentChanges[0].text.startsWith(' ') || event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && (imageMatch || loremMatch)) {
                 decoration.dispose();
             }

@@ -233,7 +233,7 @@ export function activate(context: vscode.ExtensionContext)
 			const loremMatch = ((match = loremPattern.exec(lineText)) !== null);
 
 			// replacing with lorem ipsum and disposing decoration after that replacement
-			if((event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && loremMatch)
+			if((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && loremMatch)
 			{
 				while (match !== null) 
 				{
@@ -256,7 +256,7 @@ export function activate(context: vscode.ExtensionContext)
 			const imageMatch = (match = imagePattern.exec(lineText)) !== null;
 
 			// replacing with complete image tag and disposing decoration after thet replacement
-			if((event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && imageMatch)
+			if((event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && imageMatch)
 			{
 				while (match !== null)
 				{
@@ -282,7 +282,8 @@ export function activate(context: vscode.ExtensionContext)
 
 			// dispose decoration if pattern not accepted by Enter
 			// if last change is not ' ' nor '\n' nor '\r\n' and any pattern exists dispose the decoration
-			if(!(event.contentChanges[0].text.startsWith(' ') || event.contentChanges[0].text.startsWith('\n')  || event.contentChanges[0].text.startsWith('\r\n')) && (imageMatch || loremMatch))
+			// actually doesn't work
+			if(!(event.contentChanges[0].text.startsWith(' ') || event.contentChanges[0].text.startsWith('\n') || event.contentChanges[0].text.startsWith('\r\n')) && (imageMatch || loremMatch))
 			{
 				decoration.dispose();
 			}
